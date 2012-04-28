@@ -46,9 +46,11 @@ SCRIPT = """##### LINES ADDED BY USM #####
 for f in ~/Apps/*; do
     PATH=$f/bin:$PATH
     PKG_CONFIG_PATH=$f/lib/pkgconfig:$PKG_CONFIG_PATH
+    MANPATH="$f/man:$f/share/man:$MANPATH"
 done
 export PATH
 export PKG_CONFIG_PATH
+export MANPATH
 """
 
 def usm_init():
