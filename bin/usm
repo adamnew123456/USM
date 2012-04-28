@@ -1,0 +1,129 @@
+#!/usr/bin/python
+
+# Copyright (c) 2012, Adam Marchetti.
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the <organization> nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+A user software manager. Takes compiled applications 
+and sticks them under ~/Apps, each program to its
+own directory.
+"""
+
+from __future__ import print_function
+import glob
+import os
+import shutil
+
+# Directory which this program manages.
+ROOT = os.path.join(os.path.expanduser("~"), "Apps")
+
+# The directory to check for new stuff in
+INSTALL = os.path.join(ROOT, "install")
+
+# The script that is added to the user's shell init file
+SCRIPT = """##### LINES ADDED BY USM #####
+for f in ~/Apps/*; do
+    PATH=$f/bin:$PATH
+    PKG_CONFIG_PATH=$f/lib/pkgconfig:$PKG_CONFIG_PATH
+done
+export PATH
+export PKG_CONFIG_PATH
+"""
+
+def usm_init():
+    "Create the initial USM directory for this user"
+    print("Creating ~/Apps...")
+    os.mkdir(ROOT)
+    print("Creating ~/Apps/install...")
+    os.mkdir(INSTALL)
+    rcfile = raw_input("Enter the file to add the PATH loader script to (e.g. ~/.bashrc) [EMPTY=Do Not Add]: ")
+    if rcfile != "":
+        with open(os.path.expanduser(rcfile), "a") as scriptfile:
+            scriptfile.write(SCRIPT)
+
+def usm_add(software, version):
+    "Add the directory to the listing"
+    print("Installing {0} version {1}".format(software, version))
+    os.rename(INSTALL, os.path.join(ROOT, "{0}--{1}".format(software, version)))
+    os.mkdir(INSTALL)
+
+def usm_tree():
+    "Print out a filesystem tree of install/"
+    os.execvp("tree", ("tree", INSTALL))
+
+def usm_ls(pattern="*"):
+    "Print out all matching packages"
+    for x in glob.glob(os.path.join(ROOT, pattern)):
+        print(os.path.basename(x))
+
+def usm_del(software):
+    "Delete some software from the system"
+    for dirname in glob.glob(os.path.join(ROOT, software + "*--*")):
+        if raw_input("Remove {0} [Y/...]? ".format(dirname)) == "Y":
+            print("Deleting " + dirname)
+            shutil.rmtree(os.path.join(ROOT, dirname))
+
+def usm_help():
+    print(""" USM - The User Software Manager
+-------------------------------
+usm help: Show this help page.
+
+usm init: Create and setup the USM directory.
+
+usm add <software> <version>: Take the contents of ~/Apps/install, rename
+the directory to the appropriate software, and reset ~/Apps/install.
+
+usm tree: Shows a tree of the install/ subtree.
+
+usm ls: Shows all installed packages.
+
+usm del <name>: Search for packages with the name given, prompting to delete
+any matches that exist.
+""")
+    sys.exit(1)
+
+import sys
+
+try:
+    command = sys.argv[1]
+except IndexError:
+    usm_help()
+
+if command == "help":
+    usm_help()
+elif command == "init":
+    usm_init()
+elif command == "add":
+    usm_add(sys.argv[2], sys.argv[3])
+elif command == "tree":
+    usm_tree()
+elif command == "ls":
+    if len(sys.argv) == 2:
+        usm_ls()
+    else:
+        usm_ls(sys.argv[2])
+elif command == "del":
+    usm_del(sys.argv[2])
+else:
+    usm_help()
