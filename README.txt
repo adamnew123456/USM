@@ -10,9 +10,7 @@ o There is no good way to keep tabs on what you software you have compiled, at w
 
 The first one is easy - compile everything into ~/bin or something of that nature.
 
-The second one is harder - the way that the directory structure is designed under the FHS makes knowing who owns what file and what programs there are tricky.
-
-People have tried to solve this issue before - GoboLinux, for example. However, my experience with Rootless GoboLinux has been... less than stellar. It requires extensive bootstrapping, when all I really wanted to do was to organize the stuff I compile.
+The second one is harder - the way that the directory structure is designed under the FHS makes knowing who owns what file and what programs are installed difficult. Package managers handle this on a system level, but all I really needed was an organizational tool that worked as a limited user.
 
 Thus, the User Software Manager.
 
@@ -21,10 +19,23 @@ DESIGN
 
 The User Software Manager is exactly what it sounds like - it structures all of the software you compile by hand so that it is easy to inspect what software is installed, to install new software into the system, and to remove existing software.
 
-USM, when run for the first time (`usm init`) creates a directory called ~/Apps, as well as a directory below it called ~/Apps/install.
+USM uses the filesystem as an organizational tool - instead of keeping databases (like package managers) on what is installed, USM creates a directory which houses only a single piece of software. The USM is based somewhat on the ideas of GoboLinux, although USM doesn't handle versioning like GoboLinux does (or at all, really). This makes the process of finding out what is installed easy - just list all the directories in ~/Apps; deletion is also easy - just delete the program's directory.
 
-~/Apps/install, is equivalent to a "prefix" in autoconf scripts and Makefiles. So, to compile for the USM, just do  "./configure --prefix=~/Apps/install && make && make install". Autoconf scripts create the correct directory heirarchy, so the USM has to do no work when it creates ~/Apps/install.
+USM keeps all of the user's software under ~/Apps - under apps, there are directories for installed software (e.g. foobar--1.2.3b), and a "staging area", called ~/Apps/install.
 
-When the software is done compiling, run "usm add <software-name> <software-version>". USM takes the directory ~/Apps/install, and moves it to ~/Apps/name-version. USM then creates ~/Apps/install for the installation of more software.
+When installing software, USM takes the directory ~/Apps/install, and renames it to whatever the installed software and version is. USM then creates a blank ~/Apps/install, ready for more software.
 
-This directory based structure (conceptually taken from GoboLinux) allows for a dramatic reduction in complexity. Instead of having a database listing what packages are installed, the filesystem keeps track. Want to search for a particular peice of software? "usm ls *foo*" simply looks for a directory under ~/Apps which matches the glob *foo*. Removing software? "usm del bar"; again, this deletes a directory under ~/Apps while touching nothing else.
+Finally, USM is __not__ a package manager - it does not install anything for you, and it does not handle updates. There are no remote repositories and no precompiled binaries. USM is purely an organizational tool. Although USM does do some configuration for ease of use (it sets the user's PATH, MANPATH, and PKG_CONFIG_PATH), it does not have any permanent configuration.
+
+WORKFLOW
+--------
+
+1st Time: Run `bootstrap.sh` --- this creates ~/Apps, installs USM under ~/Apps, and adds a script to the end of your shell startup file to modify your PATH.
+
+Before Compiling Software: Run `usm tree` to ensure that there is nothing existing in ~/Apps/install.
+
+When Compiling: Set the prefix (e.g. `./configure --prefix ~/Apps/install`) to ensure that the software is installed to the correct location.
+
+After Compiling: Run `usm add software version` to copy the installed software into its own directory.
+
+To Remove Something: Run `usm del foo` --- USM prompts you to remove anything that starts with foo.
