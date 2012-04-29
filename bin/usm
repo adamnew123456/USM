@@ -109,23 +109,23 @@ import sys
 
 try:
     command = sys.argv[1]
-except IndexError:
-    usm_help()
-
-if command == "help":
-    usm_help()
-elif command == "init":
-    usm_init()
-elif command == "add":
-    usm_add(sys.argv[2], sys.argv[3])
-elif command == "tree":
-    usm_tree()
-elif command == "ls":
-    if len(sys.argv) == 2:
-        usm_ls()
+    if command == "help":
+        usm_help()
+    elif command == "init":
+        usm_init()
+    elif command == "add":
+        usm_add(sys.argv[2], sys.argv[3])
+    elif command == "tree":
+        usm_tree()
+    elif command == "ls":
+        if len(sys.argv) == 2:
+            usm_ls()
+        else:
+            usm_ls(sys.argv[2])
+    elif command == "del":
+        usm_del(sys.argv[2])
     else:
-        usm_ls(sys.argv[2])
-elif command == "del":
-    usm_del(sys.argv[2])
-else:
+        usm_help()
+
+except IndexError:
     usm_help()
