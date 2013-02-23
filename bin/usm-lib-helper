@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# This sets the library path to the program's directory. Useful
+# for running large programs which depend on shared objects which
+# are not where the loader expects to find them.
+#
+
+function print-help() {
+    echo "usm-lib-helper program-directory command
+
+Runs the given command with a shared library prefix in
+program-directory/lib. Use this if you happen to get
+shared library errors when running normally.
+
+If command is empty, this starts a subshell with the correct
+library path.
+
+Example:
+   #  Note that usm-lib-helper will autocomplete big-program to
+   #  big-program--version for you.
+   usm-lib-helper big-program 'big-program some arguments'
+"
+    exit
+}
+
+PROGRAM_DIRECTORY="$1"
+COMMAND="$2"
+
+if [ "$PROGRAM_DIRECTORY" = "" ]; then
+    print-help
+    exit
+fi
+
+if [ "$COMMAND" = "" ]; then
+    COMMAND=/bin/bash
+fi
+
+POSSIBLE=( $HOME/Apps/$PROGRAM_DIRECTORY* )
+if [ ${#POSSIBLE[@]} -gt 1 ]; then
+    echo "ERROR: Ambiguity in program prefix. Try being more specific."
+    exit
+fi
+
+if [ ${#POSSIBLE[@]} -eq 0 ]; then
+    echo "ERROR: No matches found"
+    exit
+fi
+
+ACTUAL_PREFIX="${POSSIBLE[0]}"
+LD_LIBRARY_PATH="$ACTUAL_PREFIX/lib" eval $COMMAND
