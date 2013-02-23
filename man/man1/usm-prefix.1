@@ -1,0 +1,25 @@
+.TH usm 1 "23 February 2013" "Version 1.0" "USM PREFIX HELPER"
+.SH NAME
+.B usm-prefix
+\- The USM Prefix Helper
+.SH SYNOPSIS
+.B usm-prefix
+<start|stop>
+[name]
+.SH DESCRIPTION
+This is a utility for setting a correct path for programs.
+.PP
+There are programs which cannot handle being moved once they are installed.
+In the case of USM, some programs will misbehave once they are moved away from ~/Apps/install.
+This script uses a unionfs mount to help those programs run under USM without modification.
+.SH OPTIONS
+.TP
+start
+This starts the unionfs mount \- in this mode, path is a required option.
+Otherwise, it umounts the unionfs mount \- in this mode, path is ignored.
+.TP 
+name
+This is the name of the program directory that unionfs will link to ~/Apps/install.
+This is autoglobbed (see usm-lib-helper(1)) and expanded if incomplete.
+.SH AUTHOR
+adamnew123456 <adamnew123456@gmail.com> and on GitHub
