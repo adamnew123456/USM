@@ -5,8 +5,8 @@ MOTIVATION
 
 When compiling software for my Linux systems, I've always had two basic issues:
 
-o The default installation point, /usr/local, requires root permissions.
-o There is no good way to keep tabs on what you software you have compiled, at what version the software is, and what files it owns.
+ - The default installation point, /usr/local, requires root permissions.
+ - There is no good way to keep tabs on what you software you have compiled, at what version the software is, and what files it owns.
 
 The first one is easy - compile everything into ~/bin or something of that nature.
 
@@ -39,3 +39,16 @@ When Compiling: Set the prefix (e.g. `./configure --prefix ~/Apps/install`) to e
 After Compiling: Run `usm add software version` to copy the installed software into its own directory.
 
 To Remove Something: Run `usm del foo` --- USM prompts you to remove anything that starts with foo.
+
+RUNNING UNCOOPERATIVE PROGRAMS
+------------------------------
+
+There are two helper scripts (installed by default with the main USM program) that help in this situation. Check out usm-lib-helper(1) and usm-prefix(1) (you have to have unionfs installed to use usm-prefix).
+
+If you happen to notice that a shared library is not loading, use usm-lib-helper.
+If a program cannot access a resource it expects (like a config file) because it is hardcoded into "~/Apps/install", try usm-prefix.
+
+INTERESTING USES
+----------------
+
+ - Keeping around old symlinks: When using binaries compiled for older systems (which aren't available in package managed form because they lack source code, usually), I've used USM to store an fake app called "outdated-libs" which stors all the symlinks which old programs need. So, if I need to fake an old version, `usm-lib-helper outdated-libs program` will do it automatically.
