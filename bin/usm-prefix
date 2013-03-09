@@ -14,7 +14,7 @@ it.
 Example:
    usm-prefix start big-program
 "
-    exit
+    exit 1
 }
 
 COMMAND="$1"
@@ -23,23 +23,24 @@ PROGRAM_DIRECTORY="$2"
 if [ "$COMMAND" = "start" ]; then
     if [ "$PROGRAM_DIRECTORY" = "" ]; then
         print-help
-        edit
     fi
 
     POSSIBLE=( $HOME/Apps/$PROGRAM_DIRECTORY* )
     if [ ${#POSSIBLE[@]} -gt 1 ]; then
         echo "ERROR: Ambiguity in program prefix. Try being more specific."
-        exit
+        exit 1
     fi
 
     if [ ${#POSSIBLE[@]} -eq 0 ]; then
         echo "ERROR: No matches found"
-        exit
+        exit 1
     fi
 
     ACTUAL_PREFIX="${POSSIBLE[0]}"
 
     unionfs "$ACTUAL_PREFIX=RW" "$HOME/Apps/install"
-else
+elif [ "$COMMAND" = "stop" ]; then
     fusermount -u "$HOME/Apps/install"
+else
+    print_help
 fi

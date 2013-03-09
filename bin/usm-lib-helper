@@ -20,7 +20,7 @@ Example:
    #  big-program--version for you.
    usm-lib-helper big-program 'big-program some arguments'
 "
-    exit
+    exit 1
 }
 
 PROGRAM_DIRECTORY="$1"
@@ -28,7 +28,6 @@ COMMAND="$2"
 
 if [ "$PROGRAM_DIRECTORY" = "" ]; then
     print-help
-    exit
 fi
 
 if [ "$COMMAND" = "" ]; then
@@ -38,12 +37,12 @@ fi
 POSSIBLE=( $HOME/Apps/$PROGRAM_DIRECTORY* )
 if [ ${#POSSIBLE[@]} -gt 1 ]; then
     echo "ERROR: Ambiguity in program prefix. Try being more specific."
-    exit
+    exit 1
 fi
 
 if [ ${#POSSIBLE[@]} -eq 0 ]; then
     echo "ERROR: No matches found"
-    exit
+    exit 1
 fi
 
 ACTUAL_PREFIX="${POSSIBLE[0]}"
