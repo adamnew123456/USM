@@ -42,5 +42,5 @@ if [ "$COMMAND" = "start" ]; then
 elif [ "$COMMAND" = "stop" ]; then
     fusermount -u "$HOME/Apps/install"
 else
-    print_help
+    print-help
 fi
