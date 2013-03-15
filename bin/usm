@@ -47,12 +47,12 @@ def usm_add(software, version):
 
 def usm_ls(pattern="*"):
     "Print out all matching packages"
-    for x in glob.glob(os.path.join(ROOT, pattern)):
+    for x in glob.glob(os.path.join(ROOT, pattern + "*")):
         print(os.path.basename(x))
 
 def usm_del(pattern="*"):
     "Delete some software from the system"
-    for dirname in glob.glob(os.path.join(ROOT, pattern)):
+    for dirname in glob.glob(os.path.join(ROOT, pattern + "*")):
         if raw_input("Remove {0} [Y/...]? ".format(dirname)) == "Y":
             print("Deleting " + dirname)
             shutil.rmtree(os.path.join(ROOT, dirname))
