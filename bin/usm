@@ -50,9 +50,9 @@ def usm_ls(pattern="*"):
     for x in glob.glob(os.path.join(ROOT, pattern)):
         print(os.path.basename(x))
 
-def usm_del(software):
+def usm_del(software="*"):
     "Delete some software from the system"
-    for dirname in glob.glob(os.path.join(ROOT, software + "*--*")):
+    for dirname in glob.glob(os.path.join(ROOT, pattern)):
         if raw_input("Remove {0} [Y/...]? ".format(dirname)) == "Y":
             print("Deleting " + dirname)
             shutil.rmtree(os.path.join(ROOT, dirname))
@@ -67,10 +67,9 @@ usm init: Create and setup the USM directory.
 usm add <software> <version>: Take the contents of ~/Apps/install, rename
 the directory to the appropriate software, and reset ~/Apps/install.
 
-usm ls: Shows all installed packages.
+usm ls [pattern]: Shows all installed packages that match pattern (or all if no pattern given).
 
-usm del <name>: Search for packages with the name given, prompting to delete
-any matches that exist.
+usm del [pattern]: Deletes the packages matching pattern (or all if no pattern given). Asks for confirmation on all packages.
 """)
     sys.exit(1)
 
