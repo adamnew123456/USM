@@ -6,7 +6,7 @@
 #
 
 function print-help() {
-    echo "usm-lib-helper program-directory command
+    echo "usm-lib-helper <prefix> [command]
 
 Runs the given command with a shared library prefix in
 program-directory/lib. Use this if you happen to get

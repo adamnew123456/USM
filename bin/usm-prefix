@@ -5,7 +5,7 @@
 #
 
 function print-help() {
-    echo "usm-prefix [start|stop] [prefix]
+    echo "usm-prefix <start|stop> <prefix>
 Runs a unionfs mount on top of ~/Apps/install to accomidate
 programs that need absolute paths. start activates the unionfs
 mount betwen ~/Apps/install and the prefix, while stop deactivates
