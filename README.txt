@@ -32,8 +32,6 @@ WORKFLOW
 
 1st Time: Run `bootstrap.sh` --- this creates ~/Apps, installs USM under ~/Apps, and adds a script to the end of your shell startup file to modify your PATH.
 
-Before Compiling Software: Run `usm tree` to ensure that there is nothing existing in ~/Apps/install.
-
 When Compiling: Set the prefix (e.g. `./configure --prefix ~/Apps/install`) to ensure that the software is installed to the correct location.
 
 After Compiling: Run `usm add software version` to copy the installed software into its own directory.
@@ -45,8 +43,9 @@ RUNNING UNCOOPERATIVE PROGRAMS
 
 There are two helper scripts (installed by default with the main USM program) that help in this situation. Check out usm-lib-helper(1) and usm-prefix(1) (you have to have unionfs installed to use usm-prefix).
 
-If you happen to notice that a shared library is not loading, use usm-lib-helper.
-If a program cannot access a resource it expects (like a config file) because it is hardcoded into "~/Apps/install", try usm-prefix.
+If you happen to notice that a shared library is not loading, use usm-lib-helper. It binds LD_LIBRARY_PATH to the lib subdirectory of whatever program you ask it to, allowing shared libraries to be loaded from the proper directory.
+
+If a program cannot access a resource it expects (like a config file) because it is hardcoded into "~/Apps/install", try usm-prefix. It uses a unionfs mount to allow a program's access to ~/Apps/install to be "redirected" to its own directory.
 
 INTERESTING USES
 ----------------
