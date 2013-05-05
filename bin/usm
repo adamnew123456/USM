@@ -58,18 +58,15 @@ def usm_del(pattern="*"):
             shutil.rmtree(os.path.join(ROOT, dirname))
 
 def usm_help():
-    print(""" USM - The User Software Manager
--------------------------------
-usm help: Show this help page.
+    print("""usm <command> ...
+Manages self-installed software for a user.
 
-usm init: Create and setup the USM directory.
-
-usm add <software> <version>: Take the contents of ~/Apps/install, rename
-the directory to the appropriate software, and reset ~/Apps/install.
-
-usm ls [pattern]: Shows all installed packages that match pattern (or all if no pattern given).
-
-usm del [pattern]: Deletes the packages matching pattern (or all if no pattern given). Asks for confirmation on all packages.
+Commands:
+ help: Show this help page.
+ init: Create and setup the USM directory.
+ add <software> <version>: Installs software placed in the ~/Apps/install directory under the name <software>--<version>
+ ls [pattern]: Shows all installed packages that match pattern (or all if no pattern given).
+ del [pattern]: Deletes the packages matching pattern (or all if no pattern given). Asks for confirmation.
 """)
     sys.exit(1)
 
