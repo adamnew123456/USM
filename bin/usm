@@ -89,7 +89,10 @@ try:
         else:
             usm_ls(sys.argv[2])
     elif command == "del":
-        usm_del(sys.argv[2])
+        if len(sys.argv) == 2:
+            usm_del()
+        else:
+            usm_del(sys.argv[2])
     else:
         usm_help()
 
