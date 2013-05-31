@@ -1,11 +1,10 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 """
 A user software manager. Takes compiled applications 
 and sticks them under ~/Apps, each program to its
 own directory.
 """
 
-from __future__ import print_function
 import glob
 import os
 import shutil
@@ -34,7 +33,7 @@ def usm_init():
     os.mkdir(ROOT)
     print("Creating ~/Apps/install...")
     os.mkdir(INSTALL)
-    rcfile = raw_input("Enter the file to add the PATH loader script to (e.g. ~/.bashrc) [EMPTY=Do Not Add]: ")
+    rcfile = input("Enter the file to add the PATH loader script to (e.g. ~/.bashrc) [EMPTY=Do Not Add]: ")
     if rcfile != "":
         with open(os.path.expanduser(rcfile), "a") as scriptfile:
             scriptfile.write(SCRIPT)
@@ -53,7 +52,7 @@ def usm_ls(pattern="*"):
 def usm_del(pattern="*"):
     "Delete some software from the system"
     for dirname in glob.glob(os.path.join(ROOT, pattern + "*")):
-        if raw_input("Remove {0} [Y/...]? ".format(dirname)) == "Y":
+        if input("Remove {0} [Y/...]? ".format(dirname)) == "Y":
             print("Deleting " + dirname)
             shutil.rmtree(os.path.join(ROOT, dirname))
 
