@@ -16,7 +16,9 @@ ROOT = os.path.join(os.path.expanduser("~"), "Apps")
 INSTALL = os.path.join(ROOT, "install")
 
 # The script that is added to the user's shell init file
-SCRIPT = """##### LINES ADDED BY USM #####
+SCRIPT = """# This is the USM initialization file.
+# Source it inside your .bashrc / .zshrc / etc. to load USM in your shell
+# Or source it from a script which needs USM to run.
 for f in ~/Apps/*; do
     PATH=$f/bin:$PATH
     PKG_CONFIG_PATH=$f/lib/pkgconfig:$PKG_CONFIG_PATH
@@ -33,10 +35,16 @@ def usm_init():
     os.mkdir(ROOT)
     print("Creating ~/Apps/install...")
     os.mkdir(INSTALL)
-    rcfile = input("Enter the file to add the PATH loader script to (e.g. ~/.bashrc) [EMPTY=Do Not Add]: ")
-    if rcfile != "":
-        with open(os.path.expanduser(rcfile), "a") as scriptfile:
-            scriptfile.write(SCRIPT)
+    with open(os.path.expanduser("~/.usm-env"), "w") as usmenv:
+        usmenv.write(SCRIPT)
+    print(
+"""
+If you intend on running USM in your shell, add the following to your shell's .*rc file:
+
+  source ~/.usm-env
+
+This will load the USM shell variables for use in your shell session.
+""".strip())
 
 def usm_add(software, version):
     "Add the directory to the listing"
