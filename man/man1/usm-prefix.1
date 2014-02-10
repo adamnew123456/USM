@@ -6,6 +6,7 @@
 .B usm-prefix
 <start|stop>
 <name>
+<version>
 .SH DESCRIPTION
 This is a utility for setting a correct path for programs.
 .PP
@@ -22,7 +23,9 @@ This unmounts the unionfs mount \- in this mode, a path is not needed.
 .TP 
 name
 This is the name of the program directory that unionfs will link to ~/Apps/install.
-This is autoglobbed (see usm-lib-helper(1)) and expanded if incomplete.
+.TP
+version
+This is the version of the software that the unionfs will link to ~/Apps/install.
 .SH AUTHOR
 adamnew123456 <adamnew123456@gmail.com> and on GitHub
 .SH SEE ALSO

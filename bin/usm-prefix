@@ -5,40 +5,33 @@
 #
 
 function print-help() {
-    echo "usm-prefix <start|stop> <prefix>
+    echo "usm-prefix <start|stop> <name> <version>
 Runs a unionfs mount on top of ~/Apps/install to accomidate
 programs that need absolute paths. start activates the unionfs
 mount betwen ~/Apps/install and the prefix, while stop deactivates
 it.
 
 Example:
-   usm-prefix start big-program
+   usm-prefix start current big-program
 "
     exit 1
 }
 
 COMMAND="$1"
-PROGRAM_DIRECTORY="$2"
+PROGRAM_NAME="$2"
+PROGRAM_VERSION="$3"
 
 if [ "$COMMAND" = "start" ]; then
-    if [ "$PROGRAM_DIRECTORY" = "" ]; then
+    if [ "$PROGRAM_NAME" = "" -o "$PROGRAM_VERSION" = "" ]; then
         print-help
     fi
-
-    POSSIBLE=( $HOME/Apps/$PROGRAM_DIRECTORY* )
-    if [ ${#POSSIBLE[@]} -gt 1 ]; then
-        echo "ERROR: Ambiguity in program prefix. Try being more specific."
-        exit 1
+    
+    if [ ! -d "$HOME/Apps/$PROGRAM_NAME/$PROGRAM_VERSION" ]; then
+        echo "Cannot find $PROGRAM_NAME with version $PROGRAM_VERSION"
+        exit 2
     fi
 
-    if [ ${#POSSIBLE[@]} -eq 0 ]; then
-        echo "ERROR: No matches found"
-        exit 1
-    fi
-
-    ACTUAL_PREFIX="${POSSIBLE[0]}"
-
-    unionfs "$ACTUAL_PREFIX=RW" "$HOME/Apps/install"
+    unionfs "$HOME/Apps/$PROGRAM_NAME/$PROGRAM_VERSION=RW" "$HOME/Apps/install"
 elif [ "$COMMAND" = "stop" ]; then
     fusermount -u "$HOME/Apps/install"
 else

@@ -6,7 +6,7 @@
 #
 
 function print-help() {
-    echo "usm-lib-helper <prefix> [command]
+    echo "usm-lib-helper <name> <version> [command]
 
 Runs the given command with a shared library prefix in
 program-directory/lib. Use this if you happen to get
@@ -18,15 +18,16 @@ library path.
 Example:
    #  Note that usm-lib-helper will autocomplete big-program to
    #  big-program--version for you.
-   usm-lib-helper big-program 'big-program some arguments'
+   usm-lib-helper big-program current 'big-program some arguments'
 "
     exit 1
 }
 
-PROGRAM_DIRECTORY="$1"
-COMMAND="$2"
+PROGRAM_NAME="$1"
+PROGRAM_VERSION="$2"
+COMMAND="$3"
 
-if [ "$PROGRAM_DIRECTORY" = "" ]; then
+if [ "$PROGRAM_NAME" = "" -o "$PROGRAM_VERSION" = "" ]; then
     print-help
 fi
 
@@ -34,16 +35,9 @@ if [ "$COMMAND" = "" ]; then
     COMMAND=/bin/bash
 fi
 
-POSSIBLE=( $HOME/Apps/$PROGRAM_DIRECTORY* )
-if [ ${#POSSIBLE[@]} -gt 1 ]; then
-    echo "ERROR: Ambiguity in program prefix. Try being more specific."
-    exit 1
+if [ ! -d "$HOME/Apps/$PROGRAM_NAME/$PROGRAM_VERSION" ]; then
+    echo "Cannot find $PROGRAM_NAME with version $PROGRAM_VERSION"
+    exit 2
 fi
 
-if [ ${#POSSIBLE[@]} -eq 0 ]; then
-    echo "ERROR: No matches found"
-    exit 1
-fi
-
-ACTUAL_PREFIX="${POSSIBLE[0]}"
-LD_LIBRARY_PATH="$ACTUAL_PREFIX/lib" eval $COMMAND
+LD_LIBRARY_PATH="$HOME/Apps/$PROGRAM_NAME/$PROGRAM_VERSION/lib" eval $COMMAND

@@ -20,14 +20,41 @@ SCRIPT = """# This is the USM initialization file.
 # Source it inside your .bashrc / .zshrc / etc. to load USM in your shell
 # Or source it from a script which needs USM to run.
 for f in ~/Apps/*; do
-    PATH=$f/bin:$PATH
-    PKG_CONFIG_PATH=$f/lib/pkgconfig:$PKG_CONFIG_PATH
-    MANPATH="$f/man:$f/share/man:$MANPATH"
+    if [ "$(basename $f)" != "install" ]; then
+        PATH=$f/current/bin:$PATH
+        PKG_CONFIG_PATH=$f/current/lib/pkgconfig:$PKG_CONFIG_PATH
+        MANPATH="$f/current/man:$f/current/share/man:$MANPATH"
+    fi
 done
 export PATH
 export PKG_CONFIG_PATH
 export MANPATH
 """
+
+def choose_version(software, exclude=()):
+    "Asks the user to pick a particular version, for whatver reason"
+    versions = os.listdir(os.path.join(ROOT, software))
+    for exclusion in exclude:
+        versions.remove(exclusion)
+
+    acceptable_inputs = []
+    for idx, version in enumerate(versions):
+        acceptable_inputs.append(str(idx))
+        print("[{}]".format(idx), version)
+
+    if not acceptable_inputs:
+        return None
+
+    choice = ''
+    while choice not in acceptable_inputs:
+        choice = input('>')
+    return versions[int(choice)]
+
+def make_link(software, version, remove=True):
+    "Sets the default version of a software"
+    if remove:
+        os.remove(os.path.join(ROOT, software, 'current'))
+    os.symlink(os.path.join(ROOT, software, version), os.path.join(ROOT, software, 'current'))
 
 def usm_init():
     "Create the initial USM directory for this user"
@@ -49,20 +76,56 @@ This will load the USM shell variables for use in your shell session.
 def usm_add(software, version):
     "Add the directory to the listing"
     print("Installing {0} version {1}".format(software, version))
-    os.rename(INSTALL, os.path.join(ROOT, "{0}--{1}".format(software, version)))
+    is_new = not os.path.isdir(os.path.join(ROOT, software))
+
+    if is_new:
+        os.mkdir(os.path.join(ROOT, software))
+    os.rename(INSTALL, os.path.join(ROOT, software, version))
+
+    if is_new:
+        # Make sure to link the 'current' symlink if this is the first version
+        make_link(software, version, remove=False)
+
     os.mkdir(INSTALL)
 
-def usm_ls(pattern="*"):
-    "Print out all matching packages"
-    for x in glob.glob(os.path.join(ROOT, pattern + "*")):
-        print(os.path.basename(x))
+def usm_link(software, version):
+    "Links a particular version as the default"
+    if version is None:
+        print("Choose a default version")
+        version = choose_version(software, exclude=('current'))
 
-def usm_del(pattern="*"):
+    print("Linking", version, "as the default of", software)
+    make_link(software, version)
+
+def usm_ls():
+    "Print out all packages"
+    for software in glob.glob(os.path.join(ROOT, "*")):
+        print('-', os.path.basename(software))
+        for version in glob.glob(os.path.join(ROOT, software, "*")):
+            print(' |-', os.path.basename(version))
+
+def usm_del(software, version):
     "Delete some software from the system"
-    for dirname in glob.glob(os.path.join(ROOT, pattern + "*")):
-        if input("Remove {0} [Y/...]? ".format(dirname)) == "Y":
-            print("Deleting " + dirname)
-            shutil.rmtree(os.path.join(ROOT, dirname))
+    if not os.path.isdir(os.path.join(ROOT, software, version)):
+        print("Cannot delete non-existent", software, "with version", version)
+        return
+
+    remove_all = False
+    # Find out if this version is the current, and if so, prompt for the new current version
+    if os.path.realpath(os.path.join(ROOT, software, 'current')) == os.path.join(ROOT, software, version):
+        print("You are removing the current version - please choose another to use as current")
+        def_version = choose_version(software, exclude=('current', version))
+        if def_version is None:
+            print("Removing all versions of", software)
+            remove_all = True
+        else:
+            print("Changing default version to", def_version)
+            make_link(software, def_version)
+
+    if remove_all:
+        shutil.rmtree(os.path.join(ROOT, software))
+    else:
+        shutil.rmtree(os.path.join(ROOT, software, version))
 
 def usm_help():
     print("""usm <command> ...
@@ -71,9 +134,10 @@ Manages self-installed software for a user.
 Commands:
  help: Show this help page.
  init: Create and setup the USM directory.
- add <software> <version>: Installs software placed in the ~/Apps/install directory under the name <software>--<version>
- ls [pattern]: Shows all installed packages that match pattern (or all if no pattern given).
- del [pattern]: Deletes the packages matching pattern (or all if no pattern given). Asks for confirmation.
+ add <software> <version>: Installs software placed in the ~/Apps/install directory under the name <software>/<version>
+ link <software> [version]: Links a particular version to be the default version of that software
+ ls: Shows all installed packages plus their available versions.
+ del <software> <version>: Removes a particular version of a software.
 """)
     sys.exit(1)
 
@@ -87,16 +151,15 @@ try:
         usm_init()
     elif command == "add":
         usm_add(sys.argv[2], sys.argv[3])
+    elif command == "link":
+        if len(sys.argv) == 3:
+            usm_link(sys.argv[2], None)
+        else:
+            usm_link(sys.argv[2], sys.argv[3])
     elif command == "ls":
-        if len(sys.argv) == 2:
-            usm_ls()
-        else:
-            usm_ls(sys.argv[2])
+        usm_ls()
     elif command == "del":
-        if len(sys.argv) == 2:
-            usm_del()
-        else:
-            usm_del(sys.argv[2])
+        usm_del(sys.argv[2], sys.argv[3])
     else:
         usm_help()
 

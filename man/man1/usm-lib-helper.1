@@ -5,6 +5,7 @@
 .SH SYNOPSIS
 .B usm-lib-helper
 <name>
+<version>
 [program]
 .SH DESCRIPTION
 This is a utility for running programs under USM that depend upon shared objects.
@@ -13,14 +14,17 @@ When the loader looks for a shared library, it will look by default in the
 system library directories.
 This program adds the program directory matched by
 .B name
-(which can be a glob - but the program automatically adds a star to the end)
+and
+.B version
 to the loader library path to allow the loader to find the shared objects in
 the USM.
 .SH OPTIONS
 .TP
 name
-The program directory to set the loader path to. This is automatically
-globbed with a star at the end, but other globs can be used as well.
+The program directory to set the loader path to. 
+.TP
+version
+The version of the software to use.
 .TP program
 The command line to run after setting the loader path. If empty, usm-lib-helper runs a bash shell with the correct loader set for the shell's lifetime.
 .SH AUTHOR

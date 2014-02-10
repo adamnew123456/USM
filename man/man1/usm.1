@@ -31,13 +31,18 @@ usm init
 Create an initial ~/Apps and asks you to add the configuration to your shell's startup script.
 .TP
 usm add <name> <version>
-Commits whatever is in ~/Apps/local into ~/Apps/name--version.
+Commits whatever is in ~/Apps/local into ~/Apps/name/version, possibly choosing the default version
+if this is newly installed software.
 .TP
-usm ls [pattern]
-Lists out all software matching. If pattern is missing, all installed software is listed.
+usm link <name> [version]
+Changes the default version of the given software. If the version is omitted, then USM will prompt you.
 .TP
-usm del [pattern]
-Deletes all software matching. If pattern is missing, all installed software is deleted (although in both cases,
+usm ls
+Lists out all software along with the versions of each software.
+.TP
+usm del <name> <version>
+Deletes the software specified, possibly asking you for a new version if you are deleting the current
+version.
 .B USM will ask you for confirmation).
 .SH AUTHOR
 adamnew123456 <adamnew123456@gmail.com> and on GitHub

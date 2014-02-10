@@ -21,8 +21,8 @@ to install new software into the system, and to remove existing software.
 
 USM uses the filesystem as an organizational tool - instead of keeping databases (like package managers) on what is installed, 
 USM creates a directory which houses only a single piece of software. 
-The USM is based somewhat on the ideas of GoboLinux, although USM doesn't handle versioning like GoboLinux does (or at all, really). 
-This makes the process of finding out what is installed easy - just list all the directories in `~/Apps`; deletion is also easy - just delete the program's directory.
+The USM is based somewhat on the ideas of GoboLinux, and handles versioning in a similar way.
+This makes the process of finding out what is installed easy - just run `usm ls`; deletion is also easy - just run `usm del`.
 
 USM keeps all of the user's software under `~/Apps` - under apps, there are directories for installed software (e.g. foobar--1.2.3b), and a "staging area", called `~/Apps/install`.
 
@@ -42,7 +42,7 @@ When Compiling: Set the prefix (e.g. `./configure --prefix ~/Apps/install`) to e
 
 After Compiling: Run `usm add software version` to copy the installed software into its own directory.
 
-To Remove Something: Run `usm del foo` - USM prompts you to remove anything that starts with foo.
+To Remove Something: Run `usm del foo vsn` - USM prompts you to remove the `foo` software of version `vsn`.
 
 ## RUNNING UNCOOPERATIVE PROGRAMS ##
 
@@ -59,4 +59,4 @@ It uses a unionfs mount to allow a program's access to `~/Apps/install` to be "r
 
 * Keeping around old symlinks: When using binaries compiled for older systems (which aren't available in package managed form because they lack source code, usually), 
 I've used USM to store an fake app called "outdated-libs" which stors all the symlinks which old programs need. 
-So, if I need to fake an old version, `usm-lib-helper outdated-libs program` will do it automatically.
+So, if I need to fake an old version, `usm-lib-helper outdated-libs old program` will do it automatically.
