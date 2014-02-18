@@ -24,7 +24,7 @@ USM creates a directory which houses only a single piece of software.
 The USM is based somewhat on the ideas of GoboLinux, and handles versioning in a similar way.
 This makes the process of finding out what is installed easy - just run `usm ls`; deletion is also easy - just run `usm del`.
 
-USM keeps all of the user's software under `~/Apps` - under apps, there are directories for installed software (e.g. foobar--1.2.3b), and a "staging area", called `~/Apps/install`.
+USM keeps all of the user's software under `~/Apps` - under apps, there are directories for installed software (e.g. `foobar/1.2.3b`), and a "staging area", called `~/Apps/install`.
 
 When installing software, USM takes the directory `~/Apps/install`, and renames it to whatever the installed software and version is. 
 USM then creates a blank `~/Apps/install`, ready for more software.
