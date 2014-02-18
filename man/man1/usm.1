@@ -30,15 +30,19 @@ Show a handy-dandy help page in case you forget anything.
 usm init
 Create an initial ~/Apps and asks you to add the configuration to your shell's startup script.
 .TP
+usm copy-script
+Copies the startup script into ~/.usm-env
+.TP
 usm add <name> <version>
-Commits whatever is in ~/Apps/local into ~/Apps/name/version, possibly choosing the default version
+Commits whatever is in ~/Apps/install into ~/Apps/name/version, possibly choosing the default version
 if this is newly installed software.
 .TP
 usm link <name> [version]
 Changes the default version of the given software. If the version is omitted, then USM will prompt you.
 .TP
-usm ls
-Lists out all software along with the versions of each software.
+usm ls <software>
+Lists out all software along with the versions of each software. If the software argument is provided,
+then USM will list out all versions of the given software.
 .TP
 usm del <name> <version>
 Deletes the software specified, possibly asking you for a new version if you are deleting the current

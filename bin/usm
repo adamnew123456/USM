@@ -37,13 +37,14 @@ def choose_version(software, exclude=()):
     for exclusion in exclude:
         versions.remove(exclusion)
 
+    if not versions:
+        # Meaning, there are no choices with all the exclusions in place
+        return None
+
     acceptable_inputs = []
     for idx, version in enumerate(versions):
         acceptable_inputs.append(str(idx))
         print("[{}]".format(idx), version)
-
-    if not acceptable_inputs:
-        return None
 
     choice = ''
     while choice not in acceptable_inputs:
@@ -56,12 +57,9 @@ def make_link(software, version, remove=True):
         os.remove(os.path.join(ROOT, software, 'current'))
     os.symlink(os.path.join(ROOT, software, version), os.path.join(ROOT, software, 'current'))
 
-def usm_init():
-    "Create the initial USM directory for this user"
-    print("Creating ~/Apps...")
-    os.mkdir(ROOT)
-    print("Creating ~/Apps/install...")
-    os.mkdir(INSTALL)
+def usm_copy_script():
+    "Copies the initialization script into the user's $HOME/.usm-env"
+    print("Updating ~/.usm-env setup script...")
     with open(os.path.expanduser("~/.usm-env"), "w") as usmenv:
         usmenv.write(SCRIPT)
     print(
@@ -73,9 +71,17 @@ If you intend on running USM in your shell, add the following to your shell's .*
 This will load the USM shell variables for use in your shell session.
 """.strip())
 
+def usm_init():
+    "Create the initial USM directory for this user"
+    print("Creating ~/Apps...")
+    os.mkdir(ROOT)
+    print("Creating ~/Apps/install...")
+    os.mkdir(INSTALL)
+    usm_copy_script()
+
 def usm_add(software, version):
     "Add the directory to the listing"
-    print("Installing {0} version {1}".format(software, version))
+    print("Installing", software, "version", version)
     is_new = not os.path.isdir(os.path.join(ROOT, software))
 
     if is_new:
@@ -84,6 +90,7 @@ def usm_add(software, version):
 
     if is_new:
         # Make sure to link the 'current' symlink if this is the first version
+        print("Installing default link for", software, "to be", version)
         make_link(software, version, remove=False)
 
     os.mkdir(INSTALL)
@@ -97,17 +104,24 @@ def usm_link(software, version):
     print("Linking", version, "as the default of", software)
     make_link(software, version)
 
-def usm_ls():
-    "Print out all packages"
-    for software in glob.glob(os.path.join(ROOT, "*")):
-        print('-', os.path.basename(software))
-        for version in glob.glob(os.path.join(ROOT, software, "*")):
-            print(' |-', os.path.basename(version))
+def usm_ls(software=None):
+    "Print out all packages and their versions"
+    if software is None:
+        for software in glob.glob(os.path.join(ROOT, "*")):
+            print('-', os.path.basename(software))
+            for version in glob.glob(os.path.join(ROOT, software, "*")):
+                print(' |-', os.path.basename(version))
+    else:
+        try:
+            for version in glob.glob(os.path.join(ROOT, software, "*")):
+                print('-', os.path.basename(version))
+        except FileNotFoundError:
+            print("The software", software, "does not exist")
 
 def usm_del(software, version):
     "Delete some software from the system"
     if not os.path.isdir(os.path.join(ROOT, software, version)):
-        print("Cannot delete non-existent", software, "with version", version)
+        print("Software-version combination", software, "-", version, "does not exist")
         return
 
     remove_all = False
@@ -134,8 +148,11 @@ Manages self-installed software for a user.
 Commands:
  help: Show this help page.
  init: Create and setup the USM directory.
- add <software> <version>: Installs software placed in the ~/Apps/install directory under the name <software>/<version>
- link <software> [version]: Links a particular version to be the default version of that software
+ copy-script: Copies the most recent startup script to ~/.usm-env
+ add <software> <version>: Installs software placed in the ~/Apps/install
+    directory under the name ~/Apps/<software>/<version>
+ link <software> [version]: Links a particular version to be the default 
+    version of that software
  ls: Shows all installed packages plus their available versions.
  del <software> <version>: Removes a particular version of a software.
 """)
@@ -149,6 +166,8 @@ try:
         usm_help()
     elif command == "init":
         usm_init()
+    elif command == "copy-script":
+        usm_copy_script()
     elif command == "add":
         usm_add(sys.argv[2], sys.argv[3])
     elif command == "link":
@@ -157,7 +176,10 @@ try:
         else:
             usm_link(sys.argv[2], sys.argv[3])
     elif command == "ls":
-        usm_ls()
+        if len(sys.argv) == 3:
+            usm_ls(sys.argv[2])
+        else:
+            usm_ls()
     elif command == "del":
         usm_del(sys.argv[2], sys.argv[3])
     else:
