@@ -36,27 +36,47 @@ Although USM does do some configuration for ease of use (it sets the user's `PAT
 
 ## WORKFLOW ##
 
-1st Time: Run `bootstrap.sh` --- this creates `~/Apps`, installs USM under `~/Apps`, and adds a script to the end of your shell startup file to modify your `PATH`.
+### INSTALLATION ###
+Run `bootstrap.sh` --- this creates `~/Apps`, installs USM under `~/Apps`, and adds a script to modify your `PATH` and some other variables.
+You'll need to update your shell's RC file to source the script `~/.usm-env` so that USM is properly loaded by your shell.
 
-When Compiling: Set the prefix (e.g. `./configure --prefix ~/Apps/install`) to ensure that the software is installed to the correct location.
+### COMPILATION ###
 
-After Compiling: Run `usm add software version` to copy the installed software into its own directory.
+Compiling software is fairly simple for USM.
+If, for example, you're compiling `foo` version `1.2.3b`, you should follow these steps:
 
-To Remove Something: Run `usm del foo vsn` - USM prompts you to remove the `foo` software of version `vsn`.
+ - Run `usm add foo 1.2.3b`. 
+   If this is the first verison of `foo` you have installed, then USM should automatically link `1.2.3b` as the default version.
+   Otherwise, you can change the current version using `usm link foo 1.2.3b`.
+ - Configure `foo` (either with autoconf, or the like) to set the install prefix to `~/Apps/foo/1.2.3b`.
+ - Build and install `foo`.
+ - Source `~/.usm-env` from your shell to add the new program to your path.
+
+### REMOVAL ###
+
+To remove a version, just use `usm del foo 1.2.3b`. 
+If `1.2.3b` is the only version, USM will delete the entire `~/Apps/foo` directory, otherwise it will only delete `~/Apps/foo/1.2.3b`.
+If `1.2.3b` is the current version, and other versions are installed, USM will prompt you for the new current version.
+
+### UPGRADING USM ###
+
+Updating USM is now easier than it was before, due to a couple of recent modifications.
+If you're version of USM is pre-1.15, then you should run the `convert.py` script which will reorganize the `~/Apps` hierarchy for you.
+When updating from any version, you should be able to run `bootstrap.sh` and have USM automatically configure and install itself.
+All you should have to do then is restart you're running shells (or source `~/.usm-env`) to have the update come into effect.
 
 ## RUNNING UNCOOPERATIVE PROGRAMS ##
 
 There are two helper scripts (installed by default with the main USM program) that help in this situation. 
-Check out usm-lib-helper(1) and usm-prefix(1) (you have to have unionfs installed to use `usm-prefix`).
+Check out `usm-lib-helper(1)` and `usm-prefix(1)` (you have to have unionfs installed to use `usm-prefix`).
 
 If you happen to notice that a shared library is not loading, use `usm-lib-helper`. 
 It binds `LD_LIBRARY_PATH` to the lib subdirectory of whatever program you ask it to, allowing shared libraries to be loaded from the proper directory.
 
-If a program cannot access a resource it expects (like a config file) because it is hardcoded into `~/Apps/install`, try usm-prefix. 
+If a program cannot access a resource it expects (like a config file) because it is hardcoded into `~/Apps/install`, try `usm-prefix`.
 It uses a unionfs mount to allow a program's access to `~/Apps/install` to be "redirected" to its own directory.
 
 ## INTERESTING USES ##
 
-* Keeping around old symlinks: When using binaries compiled for older systems (which aren't available in package managed form because they lack source code, usually), 
-I've used USM to store an fake app called "outdated-libs" which stors all the symlinks which old programs need. 
+* Keeping around old symlinks: When using binaries compiled for older systems (which aren't available in package managed form because they lack source code, usually), I've used USM to store an fake app called "outdated-libs" which stors all the symlinks which old programs need. 
 So, if I need to fake an old version, `usm-lib-helper outdated-libs old program` will do it automatically.
