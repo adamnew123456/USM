@@ -49,7 +49,7 @@ for software_vsn in os.listdir(ROOT):
                 os.mkdir(os.path.join(ROOT, software))
                 softwares[software] = []
 
-            softwares[software].append(version)
+            softwares[software].append(new_version)
             print(":: Adding", software, "version", new_version)
             os.rename(os.path.join(ROOT, software + '--' + version), os.path.join(ROOT, software, new_version))
         except ValueError:
