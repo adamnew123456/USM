@@ -81,6 +81,11 @@ def usm_init():
 
 def usm_add(software, version):
     "Add the directory to the listing"
+    if version == 'current':
+        # avoid clashing with the symlink
+        print("Version 'current' would clash with current symlink - exiting.")
+        return
+
     print("Installing", software, "version", version)
     is_new = not os.path.isdir(os.path.join(ROOT, software))
 
