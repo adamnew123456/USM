@@ -40,9 +40,13 @@ if this is newly installed software.
 usm link <name> [version]
 Changes the default version of the given software. If the version is omitted, then USM will prompt you.
 .TP
-usm ls <software>
+usm ls [software]
 Lists out all software along with the versions of each software. If the software argument is provided,
 then USM will list out all versions of the given software.
+.TP
+usm path <software> <version>
+Prints out the path to a particular software/version combination. Useful as a part of the --prefix
+path when running ./configure.
 .TP
 usm del <name> <version>
 Deletes the software specified, possibly asking you for a new version if you are deleting the current

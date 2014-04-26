@@ -48,7 +48,7 @@ If, for example, you're compiling `foo` version `1.2.3b`, you should follow thes
  - Run `usm add foo 1.2.3b`. 
    If this is the first verison of `foo` you have installed, then USM should automatically link `1.2.3b` as the default version.
    Otherwise, you can change the current version using `usm link foo 1.2.3b`.
- - Configure `foo` (either with autoconf, or the like) to set the install prefix to `~/Apps/foo/1.2.3b`.
+ - Configure `foo` (either with autoconf, or the like) to set the install prefix to `$(usm path foo 1.2.3b)`.
  - Build and install `foo`.
  - Source `~/.usm-env` from your shell to add the new program to your path.
 

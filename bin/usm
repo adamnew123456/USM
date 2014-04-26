@@ -123,6 +123,10 @@ def usm_ls(software=None):
         except FileNotFoundError:
             print("The software", software, "does not exist")
 
+def usm_path(software, version):
+    "Prints out the absolute path to a version of a software"
+    print(os.path.abspath(os.path.join(ROOT, software, version)))
+
 def usm_del(software, version):
     "Delete some software from the system"
     if not os.path.isdir(os.path.join(ROOT, software, version)):
@@ -158,7 +162,8 @@ Commands:
     directory under the name ~/Apps/<software>/<version>
  link <software> [version]: Links a particular version to be the default 
     version of that software
- ls: Shows all installed packages plus their available versions.
+ ls [software]: Shows all installed packages plus their available versions.
+ path <software> <version>: Gets the path to a particular software/version combo.
  del <software> <version>: Removes a particular version of a software.
 """)
     sys.exit(1)
@@ -185,6 +190,8 @@ try:
             usm_ls(sys.argv[2])
         else:
             usm_ls()
+    elif command == "path":
+        usm_path(sys.argv[2], sys.argv[3])
     elif command == "del":
         usm_del(sys.argv[2], sys.argv[3])
     else:
