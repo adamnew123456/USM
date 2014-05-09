@@ -1,7 +1,7 @@
 #!/bin/sh
 # Takes the USM that is distributed in the Git repo and
 # copies it to the user's ~/Apps.
-VERSION=1.17
+VERSION=1.18
 
 if [ -e "$HOME/Apps" ]; then
     # The user is updating in this case. Copy everthing over, including the

@@ -19,11 +19,22 @@ INSTALL = os.path.join(ROOT, "install")
 SCRIPT = """# This is the USM initialization file.
 # Source it inside your .bashrc / .zshrc / etc. to load USM in your shell
 # Or source it from a script which needs USM to run.
+
+# Updates a : separated variable, if a specific entry is not present inside
+# it.
+update_if_not_in_var() {
+    varname=$1
+    value=$2
+    varvalue="$(eval echo $`eval echo $varname`)"
+    echo "$varvalue" | grep "$value" >&/dev/null || eval "$varname=$varvalue:$value"
+}
+
 for f in ~/Apps/*; do
     if [ "$(basename $f)" != "install" ]; then
-        PATH=$f/current/bin:$PATH
-        PKG_CONFIG_PATH=$f/current/lib/pkgconfig:$PKG_CONFIG_PATH
-        MANPATH="$f/current/man:$f/current/share/man:$MANPATH"
+        update_if_not_in_var PATH "$f/current/bin"
+        update_if_not_in_var PKG_CONFIG_PATH "$f/current/lib/pkgconfig"
+        update_if_not_in_var MANPATH "$f/current/man"
+        update_if_not_in_var MANPATH "$f/current/share/man"
     fi
 done
 export PATH
