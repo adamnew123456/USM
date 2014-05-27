@@ -6,19 +6,16 @@
 #
 
 function print-help() {
-    echo "usm-lib-helper <name> <version> [command]
+    echo "usm-lib-helper SOFTWARE VERSION [COMMAND]
 
-Runs the given command with a shared library prefix in
-program-directory/lib. Use this if you happen to get
-shared library errors when running normally.
+Runs a program, configuring the shared library search path to include the given
+VERSION of SOFTWARE in its search path. Specifically, it includes the following
+directory:
+
+    \$USM_PATH/SOFTWARE/VERSION/lib
 
 If command is empty, this starts a subshell with the correct
 library path.
-
-Example:
-   #  Note that usm-lib-helper will autocomplete big-program to
-   #  big-program--version for you.
-   usm-lib-helper big-program current 'big-program some arguments'
 "
     exit 1
 }
@@ -32,12 +29,12 @@ if [ "$PROGRAM_NAME" = "" -o "$PROGRAM_VERSION" = "" ]; then
 fi
 
 if [ "$COMMAND" = "" ]; then
-    COMMAND=/bin/bash
+    COMMAND="$SHELL"
 fi
 
-if [ ! -d "$HOME/Apps/$PROGRAM_NAME/$PROGRAM_VERSION" ]; then
+if [ ! -d "$USM_PATH/$PROGRAM_NAME/$PROGRAM_VERSION" ]; then
     echo "Cannot find $PROGRAM_NAME with version $PROGRAM_VERSION"
     exit 2
 fi
 
-LD_LIBRARY_PATH="$HOME/Apps/$PROGRAM_NAME/$PROGRAM_VERSION/lib" eval $COMMAND
+LD_LIBRARY_PATH="$USM_PATH/$PROGRAM_NAME/$PROGRAM_VERSION/lib" eval $COMMAND

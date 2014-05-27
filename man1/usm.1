@@ -1,0 +1,60 @@
+.TH usm 1 "27 May 2014" "Version 2.0" "THE USER SOFTWARE MANAGER"
+.SH NAME
+.B usm 
+\- The User Software Manager
+.SH SYNOPSIS
+.B usm
+<command> ...
+.SH DESCRIPTION
+USM is a software manager, which is designed to organize programs and scripts that you
+use personally but which are not provided by the system package manager. USM configures
+your PATH (and other environment variables) to allow you to run these programs as easily
+as you run system software.
+.SH OPTIONS
+.TP
+usm help
+Shows a help page, summarizing the different commands and their arguments.
+.TP
+usm init
+Create an initial $USM_PATH and ~/.usm-env. (You should avoid using this, since the
+bootstrap script provided should do this for you).
+.TP
+usm copy-script
+Copies the startup script into ~/.usm-env. (You should avoid using this, since the
+bootstrap script provided should do this for you).
+.TP
+usm add SOFTWARE VERSION
+Creates a new directory for VERSION of SOFTWARE. If VERSION is the first verison
+to be added, this also makes VERSION the current VERSION for software.
+.TP
+usm set-current SOFTWARE VERSION
+Changes the version which is added to your PATH and other environment variables.
+.TP
+usm ls [SOFTWARE ...]
+Lists out all software along with the versions of each software. Specific software can
+be given, and versions of those specific software will be listed instead.
+.TP
+usm path SOFTWARE VERSION
+Prints out the absolute path to VERSION of SOFTWARE.
+.TP
+usm rm SOFTWARE VERSION
+Removes VERSION of SOFTWARE. If VERSION is the only VERSION of software, then the
+directory where SOFTWARE is stored is removed.
+.SH FILES AND DIRECTORIES
+.TP
+~/.usm-env
+This script updates the environment variables PATH, PKG_CONFIG_PATH, and MANPATH.
+It is also the location where USM_PATH is first loaded. You want to source this
+script in your shell in order to get access to USM programs.
+.SH ENVIRONMENT VARIABLES
+.TP
+USM_PATH
+This controls the place where programs managed by USM are stored.
+.TP
+PATH, PKG_CONFIG_PATH, MANPATH
+These variables are updated by USM to allow for smoother interaction between shell use
+and software managed by USM.
+.SH AUTHOR
+adamnew123456 <adamnew123456@gmail.com> and on GitHub
+.SH SEE ALSO
+usm-lib-helper(1) is part of the USM package.
