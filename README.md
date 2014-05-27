@@ -1,82 +1,58 @@
-# USM - The User Software Manager #
+# USM - The User Software Manager
 
-## MOTIVATION ##
+## Motivation
 
-When compiling software for my Linux systems, I've always had two basic issues:
+USM seeks to fill a hole that exists because of the way that software is stored under Linux and other Unix-like systems. Typically, there are two storage locations:
 
- - The default installation point, `/usr/local`, requires root permissions.
- - There is no good way to keep tabs on what you software you have compiled, at what version the software is, and what files it owns.
+ - `/usr` and `/usr/local` are well-specified, and almost every tool recognizes these as locations where programs are stored. Typically, only administrative users can access these directories.
+ - Users have access to their home directories, but software they compile for themselves is typically stored in `~/bin`. It lacks the organization of the `/usr` and `/usr/local` hierarchies, and it is difficult to manage (`dpkg` knows what file `/usr/share/foo/bar/baz` belongs to - do you know what program created the file `~/bin/this/that/the-other`?).
 
-The first one is easy - compile everything into `~/bin` or something of that nature.
+USM is meant to make organizing your personal software easier. __It is not a package manager__ - there are no repositories, no automatic updates, no dependency tracking, etc.
+USM will, however, configure you `$PATH` and other variables to make running these programs easy.
+It also provides a location to store you programs, which is sensibly organized, rather than stuffing everything under `~/bin`.
 
-The second one is harder - the way that the directory structure is designed under the FHS makes knowing who owns what file and what programs are installed difficult. 
-Package managers handle this on a system level, but all I really needed was an organizational tool that worked as a limited user.
+## Installation
 
-Thus, the User Software Manager.
+Before starting, you need to have a Python 3.x installation (any version in the 3.x series should do); 
+you also need a  Bourne-compatible shell (`zsh`, `bash`, `dash`, etc.) since that is the dialect of shell script that the USM startup script uses.
 
-## DESIGN ##
+First, you need to clone the USM source tree:
 
-The User Software Manager is exactly what it sounds like - it structures all of the software you compile by hand so that it is easy to inspect what software is installed, 
-to install new software into the system, and to remove existing software.
+    git clone git://github.com/adamnew123456/USM
 
-USM uses the filesystem as an organizational tool - instead of keeping databases (like package managers) on what is installed, 
-USM creates a directory which houses only a single piece of software. 
-The USM is based somewhat on the ideas of GoboLinux, and handles versioning in a similar way.
-This makes the process of finding out what is installed easy - just run `usm ls`; deletion is also easy - just run `usm del`.
+Next, figure out where you want to put your USM applications directory - the default is `~/Apps`.
+If not using the default, you'll need to pass it as an argument to the bootstrap script.
 
-USM keeps all of the user's software under `~/Apps` - under apps, there are directories for installed software (e.g. `foobar/1.2.3b`), and a "staging area", called `~/Apps/install`.
+    cd USM
+    sh boostrap.sh 
+    # You can also add the applications directory, if not ~/Apps
+    ## sh boostrap.sh usm-apps-directory
 
-When installing software, USM takes the directory `~/Apps/install`, and renames it to whatever the installed software and version is. 
-USM then creates a blank `~/Apps/install`, ready for more software.
+At this point, you'll want to add the line `source ~/.usm-env` to load the USM startup script, which configures `$PATH` and other variables.
+You should also add the `source ~/.usm-env` line to the end of your shell's RC file, so these variables will be set every time your shell starts.
 
-Finally, USM is __not__ a package manager - it does not install anything for you, and it does not handle updates. 
-There are no remote repositories and no precompiled binaries. 
-USM is purely an organizational tool. 
-Although USM does do some configuration for ease of use (it sets the user's `PATH`, `MANPATH`, and `PKG_CONFIG_PATH`), it does not have any permanent configuration.
+## Example Usage
 
-## WORKFLOW ##
+The best source of documentation for USM is meant to be the man page - you should be able to run `man usm` (after sourcing `~/.usm-env`, which updates `$MANPATH`).
+The man page is mean to be comprehensive, yet understandable - if something is not clear there, raise an issue on GitHub and I'll do my best to fix any ambiguities.
 
-### INSTALLATION ###
-Run `bootstrap.sh` --- this creates `~/Apps`, installs USM under `~/Apps`, and adds a script to modify your `PATH` and some other variables.
-You'll need to update your shell's RC file to source the script `~/.usm-env` so that USM is properly loaded by your shell.
+USM also has some built-in documentation, which can be accessed by running `usm help`.
 
-### COMPILATION ###
+With that in mind, let's walk through installing a very simple program - [GNU Hello](http://www.gnu.org/software/hello).
 
-Compiling software is fairly simple for USM.
-If, for example, you're compiling `foo` version `1.2.3b`, you should follow these steps:
+1. Download the source tarball for GNU Hello, version 2.9, and unpack it in `/tmp/hello`; then, `cd /tmp/hello`.
+2. Run `usm add hello 2.9` - this creates a place where GNU Hello can be installed, and also makes 2.9 the default version.
+3. Run `./configure --prefix "$(usm path hello 2.9)"` - this tells GNU Hello to install itself into USM.
+4. Run `make && make install` to install GNU Hello.
+5. Finally, `source ~/.usm-env` and type in `hello`. You should see GNU Hello run.
 
- - Run `usm add foo 1.2.3b`. 
-   If this is the first verison of `foo` you have installed, then USM should automatically link `1.2.3b` as the default version.
-   Otherwise, you can change the current version using `usm link foo 1.2.3b`.
- - Configure `foo` (either with autoconf, or the like) to set the install prefix to `$(usm path foo 1.2.3b)`.
- - Build and install `foo`.
- - Source `~/.usm-env` from your shell to add the new program to your path.
+## Other Tools
 
-### REMOVAL ###
+USM also comes with `usm-lib-helper`, which help you run programs in USM which need shared libraries.
+`man usm-lib-helper` should give you an idea on how to use this tool.
 
-To remove a version, just use `usm del foo 1.2.3b`. 
-If `1.2.3b` is the only version, USM will delete the entire `~/Apps/foo` directory, otherwise it will only delete `~/Apps/foo/1.2.3b`.
-If `1.2.3b` is the current version, and other versions are installed, USM will prompt you for the new current version.
+## Contributing
 
-### UPGRADING USM ###
+I am always willing to look over any issues or pull requests, so feel free to send them via GitHub (preferably, not by email).
 
-Updating USM is now easier than it was before, due to a couple of recent modifications.
-If you're version of USM is pre-1.15, then you should run the `convert.py` script which will reorganize the `~/Apps` hierarchy for you.
-When updating from any version, you should be able to run `bootstrap.sh` and have USM automatically configure and install itself.
-All you should have to do then is restart you're running shells (or source `~/.usm-env`) to have the update come into effect.
-
-## RUNNING UNCOOPERATIVE PROGRAMS ##
-
-There are two helper scripts (installed by default with the main USM program) that help in this situation. 
-Check out `usm-lib-helper(1)` and `usm-prefix(1)` (you have to have unionfs installed to use `usm-prefix`).
-
-If you happen to notice that a shared library is not loading, use `usm-lib-helper`. 
-It binds `LD_LIBRARY_PATH` to the lib subdirectory of whatever program you ask it to, allowing shared libraries to be loaded from the proper directory.
-
-If a program cannot access a resource it expects (like a config file) because it is hardcoded into `~/Apps/install`, try `usm-prefix`.
-It uses a unionfs mount to allow a program's access to `~/Apps/install` to be "redirected" to its own directory.
-
-## INTERESTING USES ##
-
-* Keeping around old symlinks: When using binaries compiled for older systems (which aren't available in package managed form because they lack source code, usually), I've used USM to store an fake app called "outdated-libs" which stors all the symlinks which old programs need. 
-So, if I need to fake an old version, `usm-lib-helper outdated-libs old program` will do it automatically.
+_adamnew123456_
