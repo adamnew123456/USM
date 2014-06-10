@@ -10,7 +10,7 @@ Commands:
     copy-script
         Copies the latest version of the USM startup script to ~/.usm-env.
         (You shouldn't need to use this either).
-    add SOFTWARE VERSIOn
+    add SOFTWARE VERSION
         Creates a new directory for a new piece of software - this also links
         in the new version as the default version, if there aren't any existing
         versions.
@@ -21,10 +21,10 @@ Commands:
     ls [SOFTWARE]
         Lists out the software installed into USM, and its available versions. If
         SOFTWARE is given, only versions of SOFTWARE are listed.
-    path [SOFTWARE] [VERSION]
+    path SOFTWARE VERSION
         Gets the absolute path to the directory storing VERSION of SOFTWARE.
-    rm [SOFTWARE] [VERSION]
-        Removes VERSIOn of SOFTWARE; if VERSION is the last remaining version, then
+    rm SOFTWARE VERSION
+        Removes VERSION of SOFTWARE; if VERSION is the last remaining version, then
         the whole directory under $USM_PATH storing SOFTWARE is removed.
 """
 
