@@ -1,251 +1,357 @@
-#!/usr/bin/python3
-"""
+#!/bin/sh
+#
+# Note that there are a couple of conventions which this script follows.
+#
+# 1. Lacking local variables (POSIX doesn't require them, as far as I know),
+#    all variables prefixed with _ are used for shell locals. If a function
+#    has to call another function, and it needs to save some variables, then
+#    those variables should be prefixed with __SAVE_ when being saved. For
+#    example:
+#
+#       a() {
+#           _VAR_THAT_MIGHT_CLASH="$1"
+#
+#           # Do some things with _VAR_THAT_MIGHT_CLASH
+#           __SAVE_VAR_THAT_MIGHT_CLASH="$_VAR_THAT_MIGHT_CLASH"
+#           some_func 
+#           _VAR_THAT_MIGHT_CLASH="$__SAVE_VAR_THAT_MIGHT_CLASH"
+#       }
+
+HELP='
     usm <command> ...
 
 Commands:
     help
         Show this help page.
+
     init
-        Initializes a fresh USM repository (you shouldn't need to use this)
+        Initializes a fresh USM repository. The location should be contained
+        in the environment variable USM_PATH - otherwise, $HOME/Apps
+        becomes the location for the new USM repository.
+
+        Note that this calls create-script automatically, and will thus
+        clobber the file $HOME/.usm-env
+
     copy-script
-        Copies the latest version of the USM startup script to ~/.usm-env.
-        (You shouldn't need to use this either).
-    add SOFTWARE VERSIOn
-        Creates a new directory for a new piece of software - this also links
-        in the new version as the default version, if there aren't any existing
-        versions.
+        Copies the USM startup script to $HOME/.usm-env
+
+    add SOFTWARE VERSION
+        Configures a directory for a new version of the given software.
+        Also, if there is no version of SOFTWARE already installed, then
+        VERSION becomes the default version.
+
     set-current SOFTWARE VERSION
-        Links in the given version as the default for the given software, controlling
-        which version is added to $PATH (as well as $PKG_CONFIG_PATH and $MANPATH).
-        Note that this take effect immediately.
-    ls [SOFTWARE]
-        Lists out the software installed into USM, and its available versions. If
-        SOFTWARE is given, only versions of SOFTWARE are listed.
-    path [SOFTWARE] [VERSION]
-        Gets the absolute path to the directory storing VERSION of SOFTWARE.
-    rm [SOFTWARE] [VERSION]
-        Removes VERSIOn of SOFTWARE; if VERSION is the last remaining version, then
-        the whole directory under $USM_PATH storing SOFTWARE is removed.
-"""
+        Sets VERSION to be the current version of SOFTWARE. This changes
+        which version is added to $PATH, $PKG_CONFIG_PATH, $MANPATH, and
+        whatever other variables are added via ~/.usm-env
 
-import os
-import shutil
-import sys
+    ls [SOFTWARE...]
+        Lists out the software installed in USM, and all of the versions
+        of each software. If SOFTWARE is given, only versions of SOFTWARE
+        are listed.
 
-# The directory which USM manages is passed through the environment
-try:
-    ROOT = os.environ['USM_PATH']
-except KeyError:
-    print('''
-You must set $USM_PATH to the directory where USM keeps its programs. Aborting.
-'''.strip())
-    sys.exit(1)
+    path SOFTWARE VERSION
+        Gets the absolute path to the directory storing VERSION of
+        SOFTWARE.
 
-# The script used for configuring USM's environment varaibles. Note that
-# the word '%THE-USM-PATH%' is replaced when the script is actually copied.
+    rm SOFTWARE VERSION
+        Removes VERSION of SOFTWARE - if VERSION is the last remaining
+        version, then the whole directory containing SOFTWARE is removed.
+'
 
-SCRIPT = """# This is the USM initialization file.
-# Source it inside your shell's RC file to load USM in your shell automatically,
-# or source it from a script which needs USM to run.
+if [ -z "$USM_PATH" ]; then
+    echo '$USM_PATH not set - aborting'
+    exit 1
+fi
 
-export USM_PATH="%THE-USM-PATH%"
+# Sigh. I wish that shell scripts had a Lisp-style quasiquote operator.
+# However, the only thing that actually needs to be injected is the
+# first $USM_PATH value, so every other usage of " and $ needs to be escaped.
+STARTUP_SCRIPT="#!/bin/sh
+# This is the USM initialization file - source it from your shell RC file
+# to load USM in your shell automatically, or source it from a script
+# which needs USM to run.
 
-# Updates a : separated variable, if a specific entry is not present inside
-# it.
+export USM_PATH=\"$USM_PATH\"
+
+# Updates a : separated variable, if a specific entry is not already
+# present
 update_if_not_in_var() {
-    varname=$1
-    value=$2
-    varvalue="$(eval echo $`eval echo $varname`)"
-    echo "$varvalue" | grep "$value" >&/dev/null || eval "$varname=$varvalue:$value"
+    varname=\$1
+    value=\$2
+    varvalue=\"\$(eval echo \$\`eval echo \$varname\`)\"
+    echo \"\$varvalue\" | grep \"\$value\" >& /dev/null || eval \"\$varname=\$varvalue:\$value\"
 }
 
-for f in "$USM_PATH"/*; do
-    update_if_not_in_var PATH "$f/current/bin"
-    update_if_not_in_var PKG_CONFIG_PATH "$f/current/lib/pkgconfig"
-    update_if_not_in_var MANPATH "$f/current/man"
-    update_if_not_in_var MANPATH "$f/current/share/man"
+for f in \"\$USM_PATH\"/*; do
+    update_if_not_in_var PATH \"\$f/current/bin\"
+    update_if_not_in_var PKG_CONFIG_PATH \"\$f/current/lib/pkgconfig\"
+    update_if_not_in_var MANPATH \"\$f/current/man\"
+    update_if_not_in_var MANPATH \"\$f/current/share/man\"
 done
 export PATH
 export PKG_CONFIG_PATH
 export MANPATH
-"""
+"
 
-def print_help_and_exit():
-    'Prints out the documentation before exiting'
-    print(__doc__)
-    sys.exit(1)
-
-def assert_software_exists(software, version):
-    'Assertss to see if a particular version of a software exists'
-    if not os.path.isdir(os.path.join(ROOT, software, version)):
-        print('Version', version, 'of', software, 'does not exist')
-        sys.exit(1)
-
-def usm_init(*argv):
-    'Creates the initial directory structure, and copies the script.'
-    print("Creating", ROOT)
-    os.mkdir(ROOT)
-
-    COMMANDS['copy-script']()
-
-def usm_copy_script(*argv):
-    'Copies over the startup script'
-    actual_script = SCRIPT.replace('%THE-USM-PATH%', ROOT)
-    script_path = os.path.join(os.environ['HOME'], '.usm-env')
-
-    print("Creating/updating", script_path)
-    with open(script_path, 'w') as script_file:
-        script_file.write(actual_script)
-
-def usm_add(*argv):
-    'Inserts a new version for a piece of software'
-    try:
-        software, version = argv
-    except ValueError:
-        print_help_and_exit()
-
-    if version == 'current':
-        # This will clash with the symlink for the current version
-        print('Cannot use the reserved name "current" as a version.')
-        sys.exit(1)
-
-    print('Installing', software, version)
-
-    # Figure out whether or not there are other versions of this software
-    is_new = not os.path.isdir(os.path.join(ROOT, software))
-
-    # If it doesn't exist, make the software's directory first...
-    if is_new:
-        os.mkdir(os.path.join(ROOT, software))
-
-    # ... and then the version's directory
-    os.mkdir(os.path.join(ROOT, software, version))
-
-    # Create the 'current' link if there isn't one
-    if is_new:
-        COMMANDS['set-current'](software, version)
-
-def usm_set_current(*argv):
-    'Links a default version in for a sofware'
-    try:
-        software, version = argv
-    except ValueError:
-        print_help_and_exit()
-
-    assert_software_exists(software, version) 
-
-    if version == 'current':
-        # This will clash with the symlink for the current version
-        print('Cannot use the reserved name "current" as a version.')
-        sys.exit(1)
-
-    print('Making', version, 'the current for', software)
-    current_symlink = os.path.join(ROOT, software, 'current')
-
-    if os.path.exists(current_symlink):
-        os.remove(current_symlink)
-    os.symlink(os.path.join(ROOT, software, version), current_symlink)
-
-def list_versions(software):
-    'Lists all entries for a particular piece of software'
-    # The idea here is to be as friendly to parsers as possible, while
-    # still being human readable. As long as there aren't any spaces anywhere,
-    # the output could be parsed with a simple awk script.
-    try:
-        versions = os.listdir(os.path.join(ROOT, software))
-        versions.remove('current')
-        return versions
-    except OSError:
-        print(software, 'not found')
-        return []
-
-def is_current(software, version):
-    'Checks to see if a particular version of a software is the current version'
-    given_version = os.path.join(ROOT, software, version)
-    current_version = os.path.realpath(os.path.join(ROOT, software, 'current'))
-    return given_version == current_version
-
-def print_versions(software, versions):
-    'Prints out all the versions of a software'
-    print(software)
-    for version in versions:
-        if is_current(software, version):
-            print('*', version)
-        else:
-            print('-', version)
-
-def usm_ls(*argv):
-    'Lists all versions of either all, or a particular, software'
-    # Mimic the behavior of actual ls, which will show either all files (with no
-    # arguments) or specific files (with arguments)
-    if argv:
-        softwares = argv
-    else:
-        softwares = os.listdir(ROOT)
-
-    for software in softwares:
-        versions = list_versions(software)
-        if versions:
-            print_versions(software, versions)
-
-def usm_path(*argv):
-    'Prints out the path to a particular version of a software'
-    try:
-        software, version = argv
-    except ValueError:
-        print_help_and_exit()
-
-    print(os.path.join(ROOT, software, version))
-
-def usm_rm(*argv):
-    'Uninstalls a particular version of a software'
-    try:
-        software, version = argv
-    except ValueError:
-        print_help_and_exit()
-
-    assert_software_exists(software, version)
-    
-    # First, check to see if only one version is left - in that case, remove the
-    # software as a whole
-    if len(list_versions(software)) == 1:
-        print('Removing all versions of', software)
-        shutil.rmtree(os.path.join(ROOT, software))
-        return
-
-    # If another version _can_ be linked, ensure that it _is_ (i.e. the given version
-    # isn't current)
-    if is_current(software, version):
-        print('Cannot remove the current version - please change the current version')
-        print('of {software} before trying to delete {software} {version}'.format(
-                    software=software, version=version))
-        sys.exit(1)
-
-    # Remove the given version, assuming now that it isn't current and that other
-    # versions are still there
-    print('Removing', software, version)
-    shutil.rmtree(os.path.join(ROOT, software, version))
-        
-COMMANDS = {
-    'init': usm_init,
-    'copy-script': usm_copy_script,
-    'add': usm_add,
-    'set-current': usm_set_current,
-    'ls': usm_ls,
-    'path': usm_path,
-    'rm': usm_rm,
+# Prints out the user help, and then exits with a non-zero code
+print_help_and_exit() {
+    echo "$HELP"
+    exit 1
 }
 
-if __name__ == '__main__':
-    # Skip sys.argv[0], the path to the script
-    argv = sys.argv[1:]
+# Make sure that a particular software-version combo exists - if not, then
+# exit with an error
+assert_software_exists() {
+    _SOFTWARE="$1"
+    _VERSION="$2"
 
-    try:
-        command = argv.pop(0)
-    except IndexError:
-        print_help_and_exit()
+    if [ -d "$USM_PATH/$_SOFTWARE/$_VERSION" ]; then
+        _IS_A_DIRECTORY=1
+    else
+        _IS_A_DIRECTORY=0
+    fi
 
-    if command in COMMANDS:
-        COMMANDS[command](*argv)
-    else:
-        print_help_and_exit()
+    # Make sure that we include symlinks, otherwise a test for the version
+    # 'current' would always fail
+    if [ -L "$USM_PATH/$_SOFTWARE/$_VERSION" ]; then
+        _IS_A_LINK=1
+    else
+        _IS_A_LINK=0
+    fi
+   
+    if [ $_IS_A_DIRECTORY -eq 0 ] && [ $_IS_A_LINK -eq 0 ]; then
+        echo "$_VERSION of $_SOFTWARE does not exist"
+        exit 1
+    fi
+}
+
+# Initializes the USM repository, by creating the root and running
+# usm_copy_script
+usm_init() {
+    echo "Creating $USM_PATH"
+    mkdir "$USM_PATH"
+
+    usm_copy_script
+}
+
+# Copies the startup script ($STARTUP_SCRIPT) into $HOME/.usm-env
+usm_copy_script() {
+    _SCRIPT_PATH="$HOME/.usm-env"
+    echo "$STARTUP_SCRIPT" > "$_SCRIPT_PATH"
+}
+
+# Adds a directory for a new version of a software
+usm_add() {
+    _SOFTWARE="$1"
+    _VERSION="$2"
+
+    if [ "$_VERSION" = "current" ]; then
+        echo "Cannot used the reserved name 'current' as a version"
+        exit 1
+    fi
+
+    echo "Installing $_SOFTWARE $_VERSION"
+    
+    # Make the base directory if this is the first version
+    if [ ! -d "$USM_PATH/$_SOFTWARE" ]; then
+        _IS_NEW=1
+        mkdir "$USM_PATH/$_SOFTWARE"
+    else
+        _IS_NEW=0
+    fi
+
+    # Make the directory for the version
+    mkdir "$USM_PATH/$_SOFTWARE/$_VERSION"
+
+    # If this is the first version, then update the current link to this
+    # version
+    if [ $_IS_NEW -ne 0 ]; then
+        usm_set_current "$_SOFTWARE" "$_VERSION"
+    fi
+}
+
+# Sets the current version by updating a symbolic link
+usm_set_current() {
+    assert_software_exists "$1" "$2"
+
+    _SOFTWARE="$1"
+    _VERSION="$2"
+
+    if [ "$_VERSION" = "current" ]; then
+        echo "Cannot used the reserved name 'current' as a version"
+        exit 1
+    fi
+
+    echo "Making $_VERSION the current for $_SOFTWARE"
+    _CURRENT_SYMLINK="$USM_PATH/$_SOFTWARE/current"
+
+    if [ -L "$_CURRENT_SYMLINK" ]; then
+        rm "$_CURRENT_SYMLINK"
+    fi
+
+    ln -s "$USM_PATH/$_SOFTWARE/$_VERSION" "$_CURRENT_SYMLINK"
+}
+
+# Lists the versions of a single software
+list_software() {
+    # This is a little weird, but it is the most reliable way to ensure
+    # that a given software exists in general.
+    assert_software_exists "$1" "current"
+
+    _SOFTWARE="$1"
+
+    echo "$_SOFTWARE"
+
+    _CURRENT_VERSION="$(readlink "$USM_PATH/$_SOFTWARE/current")"
+    for _VERSION in "$USM_PATH/$_SOFTWARE/"*; do
+        if [ "$_VERSION" != "$USM_PATH/$_SOFTWARE/current" ]; then
+            if [ "$_CURRENT_VERSION" = "$_VERSION" ]; then
+                echo "* $(basename "$_VERSION")"
+            else
+                echo "- $(basename "$_VERSION")"
+            fi
+        fi
+    done
+}
+
+# Lists the versions of all software given
+usm_ls() {
+    if [ $# -eq 0 ]; then
+        # We'll be using $@ to iterate through all of the softwares. In this
+        # case, if we're listing all the software, then we have to inject all
+        # the software names into $@. Go ahead and clear out $@ so we can
+        # do the injection.
+        while [ $# -gt 0 ]; do
+            shift
+        done
+        
+        for _SOFTWARE in "$USM_PATH/"*; do
+            # We have to emulate the opposite of 'shift', but there isn't
+            # an actual 'unshift' builtin. This works just as well, though.
+            set -- "$_SOFTWARE" "$@"
+        done
+    fi
+
+    while [ $# -gt 0 ]; do
+        list_software "$(basename "$1")"
+        shift
+    done
+}
+
+# Prints out the absolute path to a particular software-version combo
+usm_path() {
+    _SOFTWARE="$1"
+    _VERSION="$2"
+
+    echo "$USM_PATH/$_SOFTWARE/$_VERSION"
+}
+
+# Removes a version of a particular software, removing the software itself
+# if this is the last version
+usm_rm() {
+    assert_software_exists "$1" "$2"
+    _SOFTWARE="$1"
+    _VERSION="$2"
+
+    _CURRENT_VERSION="$(readlink "$USM_PATH/$_SOFTWARE/current")"
+    
+    # If there is only one version left, then just remove the whole
+    # software directory - this actually counts all versions, excluding the
+    # 'current' symlink
+    _NUM_VERSIONS=0
+    for _ITER_VERSION in "$USM_PATH/$_SOFTWARE/"*; do
+        if [ "$_ITER_VERSION" != "$USM_PATH/$_SOFTWARE/current" ]; then
+            _NUM_VERSIONS=$((_NUM_VERSIONS + 1))
+        fi
+    done
+
+    if [ $_NUM_VERSIONS -eq 1 ]; then
+        echo "Only one version of $_SOFTWARE - deleting $_SOFTWARE"
+        rm -rf "$USM_PATH/$_SOFTWARE"
+    else
+        # Ensure that we're not deleting the current version, since that
+        # would leave the user's shell in a bad state (since they would have
+        # a dangling symlink)
+        if [ "$_CURRENT_VERSION" = "$USM_PATH/$_SOFTWARE/$_VERSION" ]; then
+            echo "$_VERSION is the current version - please select another"
+            echo "current version using 'usm set-current $_SOFTWARE VERSION'."
+            exit 1
+        fi
+
+        echo "Removing $_SOFTWARE $_VERSION"
+        rm -rf "$USM_PATH/$_SOFTWARE/$_VERSION"
+    fi
+}
+
+if [ $# -eq 0 ]; then
+    print_help_and_exit
+fi
+
+COMMAND=$1
+
+# Push all the other arguments forward so we don't have to deal with
+# the command later.
+shift
+
+case "$COMMAND" in
+help)
+    # Don't check the arguments here - if there was an error, then we'd
+    # just end up calling `print_help_and_exit` anyway
+    print_help_and_exit
+    ;;
+init)
+    if [ $# -ne 0 ]; then
+        echo "'usm init' takes 0 arguments, got $#"
+        exit 1
+    fi
+
+    usm_init
+    ;;
+copy-script)
+    if [ $# -ne 0 ]; then
+        echo "'usm copy-script' takes 0 arguments, got $#"
+        exit 1
+    fi
+
+    usm_copy_script
+    ;;
+add)
+    if [ $# -ne 2 ]; then
+        echo "'usm add SOFTWARE VERSION' takes 2 arguments, got $#"
+        exit 1
+    fi
+
+    usm_add "$@"
+    ;;
+set-current)
+    if [ $# -ne 2 ]; then
+        echo "'usm set-current SOFTWARE VERSION' takes 2 arguments, got $#"
+        exit 1
+    fi
+
+    usm_set_current "$@"
+    ;;
+ls)
+    usm_ls "$@"
+    ;;
+path)
+    if [ $# -ne 2 ]; then
+        echo "'usm path SOFTWARE VERSION' takes 2 arguments, got $#"
+        exit 1
+    fi
+
+    usm_path "$@"
+    ;;
+rm)
+    if [ $# -ne 2 ]; then
+        echo "'usm rm SOFTWARE VERSION' takes 2 arguments, got $#"
+        exit 1
+    fi
+
+    usm_rm "$@"
+    ;;
+*) 
+    print_help_and_exit
+    ;;
+esac

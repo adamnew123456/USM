@@ -1,7 +1,7 @@
 #!/bin/sh
 # Takes the USM that is distributed in the Git repo and
 # copies it to the user's ~/Apps.
-VERSION=2.0
+VERSION=2.0-sh
 USM="bin/usm"
 
 if [ -n "$1" ]; then
@@ -16,17 +16,17 @@ fi
 if [ -e "$USM_PATH/usm" ]; then
     # The user is updating in this case. Copy everthing over, including the
     # (possibly changed) startup script and then use the new version by default.
-    python3 $USM add usm $VERSION
-    USM_INSTALL_PATH="$(python3 $USM path usm $VERSION)"
+    sh $USM add usm $VERSION
+    USM_INSTALL_PATH="$(sh $USM path usm $VERSION)"
     cp -R bin "$USM_INSTALL_PATH"
     mkdir "$USM_INSTALL_PATH/man"
     cp -R man1 "$USM_INSTALL_PATH/man"
-    python3 $USM set-current usm $VERSION
+    sh $USM set-current usm $VERSION
 
     chmod +x "$USM_INSTALL_PATH/bin/usm"
     chmod +x "$USM_INSTALL_PATH/bin/usm-lib-helper"
 
-    python3 $USM copy-script
+    sh $USM copy-script
     echo "**********"
     echo 'You may want to `source ~/.usm-env` in your current shell'
 elif [ -e "$USM_PATH" ]; then
@@ -39,9 +39,9 @@ elif [ -e "$USM_PATH" ]; then
 else
     # Fresh installation, without any issues
     echo "Installing USM to $USM_PATH..."
-    python3 $USM init
-    python3 $USM add usm $VERSION
-    USM_INSTALL_PATH="$(python3 $USM path usm $VERSION)"
+    sh $USM init
+    sh $USM add usm $VERSION
+    USM_INSTALL_PATH="$(sh $USM path usm $VERSION)"
     cp -R bin "$USM_INSTALL_PATH"
     mkdir "$USM_INSTALL_PATH/man"
     cp -R man1 "$USM_INSTALL_PATH/man"

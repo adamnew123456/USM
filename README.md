@@ -13,8 +13,7 @@ It also provides a location to store you programs, which is sensibly organized, 
 
 ## Installation
 
-Before starting, you need to have a Python 3.x installation (any version in the 3.x series should do); 
-you also need a  Bourne-compatible shell (`zsh`, `bash`, `dash`, etc.) since that is the dialect of shell script that the USM startup script uses.
+Before starting, you need to have a Bourne-compatible shell (`zsh`, `bash`, `dash`, etc.) since that is the dialect of shell script that the USM startup script uses. This experimental branch removes the need for a Python installation, since the core utilities are written purely in POSIX shell script.
 
 First, you need to clone the USM source tree:
 
