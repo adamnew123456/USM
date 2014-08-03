@@ -1,7 +1,7 @@
 #!/bin/sh
 # Takes the USM that is distributed in the Git repo and
 # copies it to the user's ~/Apps.
-VERSION=2.1-sh
+VERSION=2.2-sh
 USM="bin/usm"
 
 if [ -n "$1" ]; then

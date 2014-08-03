@@ -229,7 +229,7 @@ usm_ls() {
         for _SOFTWARE in "$USM_PATH/"*; do
             # We have to emulate the opposite of 'shift', but there isn't
             # an actual 'unshift' builtin. This works just as well, though.
-            set -- "$_SOFTWARE" "$@"
+            set --  "$@" "$_SOFTWARE"
         done
     fi
 
