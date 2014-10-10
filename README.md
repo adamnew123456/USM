@@ -16,7 +16,8 @@ It also provides a location to store you programs, which is sensibly organized, 
 Before starting, you need to have a Bourne-compatible shell (`zsh`, `bash`, `dash`, etc.) since that is the dialect of shell script that the USM startup script uses. This branch, which used to be experimental, is now 
 stable and is a better official version of USM because it has fewer dependencies.
 
-First, you need to clone the USM source tree:
+First, you need to clone the USM source tree (alternatively, if you have
+already downloaded a tarball, you can skip this step):
 
     git clone git://github.com/adamnew123456/USM
 
