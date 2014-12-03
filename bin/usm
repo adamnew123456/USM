@@ -1,24 +1,18 @@
 #!/bin/sh
-#
-# Note that there are a couple of conventions which this script follows.
-#
-# 1. Lacking local variables (POSIX doesn't require them, as far as I know),
-#    all variables prefixed with _ are used for shell locals. If a function
-#    has to call another function, and it needs to save some variables, then
-#    those variables should be prefixed with __SAVE_ when being saved. For
-#    example:
-#
-#       a() {
-#           _VAR_THAT_MIGHT_CLASH="$1"
-#
-#           # Do some things with _VAR_THAT_MIGHT_CLASH
-#           __SAVE_VAR_THAT_MIGHT_CLASH="$_VAR_THAT_MIGHT_CLASH"
-#           some_func 
-#           _VAR_THAT_MIGHT_CLASH="$__SAVE_VAR_THAT_MIGHT_CLASH"
-#       }
+set -u
 
-HELP='
-    usm <command> ...
+USAGE='Usage: usm COMMAND ...
+
+    usm help
+    usm init
+    usm copy-script
+    usm add SOFTWARE VERSION
+    usm set-current SOFTWARE VERSION
+    usm ls [SOFTWARE] [SOFTWARE] ...
+    usm path SOFTWARE VERSION
+    usm rm SOFTWARE VERSION'
+
+HELP='Usage: usm COMMAND ...
 
 Commands:
     help
@@ -56,8 +50,7 @@ Commands:
 
     rm SOFTWARE VERSION
         Removes VERSION of SOFTWARE - if VERSION is the last remaining
-        version, then the whole directory containing SOFTWARE is removed.
-'
+        version, then the whole directory containing SOFTWARE is removed.'
 
 if [ -z "$USM_PATH" ]; then
     echo '$USM_PATH not set - aborting'
@@ -72,7 +65,8 @@ STARTUP_SCRIPT="#!/bin/sh
 # to load USM in your shell automatically, or source it from a script
 # which needs USM to run.
 
-export USM_PATH=\"$USM_PATH\"
+USM_PATH=\"$USM_PATH\"
+export USM_PATH
 
 # Updates a : separated variable, if a specific entry is not already
 # present
@@ -94,33 +88,21 @@ export PKG_CONFIG_PATH
 export MANPATH
 "
 
-# Prints out the user help, and then exits with a non-zero code
-print_help_and_exit() {
-    echo "$HELP"
-    exit 1
-}
-
 # Make sure that a particular software-version combo exists - if not, then
 # exit with an error
 assert_software_exists() {
     _SOFTWARE="$1"
     _VERSION="$2"
 
-    if [ -d "$USM_PATH/$_SOFTWARE/$_VERSION" ]; then
-        _IS_A_DIRECTORY=1
-    else
-        _IS_A_DIRECTORY=0
-    fi
+    test -d "$USM_PATH/$_SOFTWARE/$_VERSION"
+    _IS_A_DIRECTORY=$?
 
     # Make sure that we include symlinks, otherwise a test for the version
     # 'current' would always fail
-    if [ -L "$USM_PATH/$_SOFTWARE/$_VERSION" ]; then
-        _IS_A_LINK=1
-    else
-        _IS_A_LINK=0
-    fi
+    test -L "$USM_PATH/$_SOFTWARE/$_VERSION"
+    _IS_A_LINK=$?
    
-    if [ $_IS_A_DIRECTORY -eq 0 ] && [ $_IS_A_LINK -eq 0 ]; then
+    if [ $_IS_A_DIRECTORY -ne 0 -a $_IS_A_LINK -ne 0 ]; then
         echo "$_VERSION of $_SOFTWARE does not exist"
         exit 1
     fi
@@ -137,8 +119,8 @@ usm_init() {
 
 # Copies the startup script ($STARTUP_SCRIPT) into $HOME/.usm-env
 usm_copy_script() {
-    _SCRIPT_PATH="$HOME/.usm-env"
-    echo "$STARTUP_SCRIPT" > "$_SCRIPT_PATH"
+    echo "Writing startup script to $HOME/.usm-env"
+    echo "$STARTUP_SCRIPT" > "$HOME/.usm-env"
 }
 
 # Adds a directory for a new version of a software
@@ -165,7 +147,7 @@ usm_add() {
     mkdir "$USM_PATH/$_SOFTWARE/$_VERSION"
 
     # If this is the first version, then update the current link to this
-    # version
+    # version so the user isn't left without a 'current'
     if [ $_IS_NEW -ne 0 ]; then
         usm_set_current "$_SOFTWARE" "$_VERSION"
     fi
@@ -185,22 +167,18 @@ usm_set_current() {
 
     echo "Making $_VERSION the current for $_SOFTWARE"
     _CURRENT_SYMLINK="$USM_PATH/$_SOFTWARE/current"
-
-    if [ -L "$_CURRENT_SYMLINK" ]; then
-        rm "$_CURRENT_SYMLINK"
-    fi
-
+    rm -f "$_CURRENT_SYMLINK"
     ln -s "$USM_PATH/$_SOFTWARE/$_VERSION" "$_CURRENT_SYMLINK"
 }
 
 # Lists the versions of a single software
 list_software() {
     # This is a little weird, but it is the most reliable way to ensure
-    # that a given software exists in general.
+    # that a given software exists in general, since all of them have a
+    # 'current' version
     assert_software_exists "$1" "current"
 
     _SOFTWARE="$1"
-
     echo "$_SOFTWARE"
 
     _CURRENT_VERSION="$(readlink "$USM_PATH/$_SOFTWARE/current")"
@@ -218,17 +196,11 @@ list_software() {
 # Lists the versions of all software given
 usm_ls() {
     if [ $# -eq 0 ]; then
-        # We'll be using $@ to iterate through all of the softwares. In this
-        # case, if we're listing all the software, then we have to inject all
-        # the software names into $@. Go ahead and clear out $@ so we can
-        # do the injection.
-        while [ $# -gt 0 ]; do
-            shift
-        done
-        
+        # The goal here is to get a list of all the software contained inside
+        # $USM_PATH, in order. Since the shell should sort it for us, the only
+        # odd thing is the 'set -- ...' line, which is necessary to 'append' to
+        # the list of arguments
         for _SOFTWARE in "$USM_PATH/"*; do
-            # We have to emulate the opposite of 'shift', but there isn't
-            # an actual 'unshift' builtin. This works just as well, though.
             set --  "$@" "$_SOFTWARE"
         done
     fi
@@ -285,7 +257,8 @@ usm_rm() {
 }
 
 if [ $# -eq 0 ]; then
-    print_help_and_exit
+    echo "$USAGE"
+    exit 1
 fi
 
 COMMAND=$1
@@ -296,10 +269,8 @@ shift
 
 case "$COMMAND" in
 help)
-    # Don't check the arguments here - if there was an error, then we'd
-    # just end up calling `print_help_and_exit` anyway
-    print_help_and_exit
-    ;;
+    echo "$HELP"
+    exit 1;;
 init)
     if [ $# -ne 0 ]; then
         echo "'usm init' takes 0 arguments, got $#"
@@ -314,44 +285,38 @@ copy-script)
         exit 1
     fi
 
-    usm_copy_script
-    ;;
+    usm_copy_script ;;
 add)
     if [ $# -ne 2 ]; then
         echo "'usm add SOFTWARE VERSION' takes 2 arguments, got $#"
         exit 1
     fi
 
-    usm_add "$@"
-    ;;
+    usm_add "$@" ;;
 set-current)
     if [ $# -ne 2 ]; then
         echo "'usm set-current SOFTWARE VERSION' takes 2 arguments, got $#"
         exit 1
     fi
 
-    usm_set_current "$@"
-    ;;
+    usm_set_current "$@" ;;
 ls)
-    usm_ls "$@"
-    ;;
+    usm_ls "$@" ;;
 path)
     if [ $# -ne 2 ]; then
         echo "'usm path SOFTWARE VERSION' takes 2 arguments, got $#"
         exit 1
     fi
 
-    usm_path "$@"
-    ;;
+    usm_path "$@" ;;
 rm)
     if [ $# -ne 2 ]; then
         echo "'usm rm SOFTWARE VERSION' takes 2 arguments, got $#"
         exit 1
     fi
 
-    usm_rm "$@"
-    ;;
+    usm_rm "$@" ;;
 *) 
-    print_help_and_exit
-    ;;
+    echo "$USAGE"
+    exit 1 ;;
 esac

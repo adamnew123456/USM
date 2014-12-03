@@ -1,30 +1,44 @@
 #!/bin/sh
 # Takes the USM that is distributed in the Git repo and
 # copies it to the user's ~/Apps.
-VERSION=2.2-sh
+VERSION=2.3-sh
 USM="bin/usm"
 
 if [ -n "$1" ]; then
-    export USM_PATH="$1"
+    USM_PATH="$1"
+    export USM_PATH
 elif [ -n "$USM_PATH" ]; then
     # No use copying an already-existing environment variable
     :
 else
-    export USM_PATH="$HOME/Apps"
+    USM_PATH="$HOME/Apps"
+    export USM_PATH
 fi
 
-if [ -e "$USM_PATH/usm" ]; then
+copy_usm() {
+    USM_INSTALL_PATH="$1"
+    echo "Installing to $USM_INSTALL_PATH..."
+
+    cp -R bin "$USM_INSTALL_PATH"
+    mkdir "$USM_INSTALL_PATH/man"
+    cp -R man1 "$USM_INSTALL_PATH/man"
+
+    chmod +x "$USM_INSTALL_PATH/bin/usm"
+    chmod +x "$USM_INSTALL_PATH/bin/usm-lib-helper"
+}
+
+if [ -e "$USM_PATH/usm/$VERSION" ]; then
+    echo "USM $VERSION already installed - aborting"
+    exit 1
+elif [ -e "$USM_PATH/usm" ]; then
     # The user is updating in this case. Copy everthing over, including the
     # (possibly changed) startup script and then use the new version by default.
     sh $USM add usm $VERSION
     USM_INSTALL_PATH="$(sh $USM path usm $VERSION)"
-    cp -R bin "$USM_INSTALL_PATH"
-    mkdir "$USM_INSTALL_PATH/man"
-    cp -R man1 "$USM_INSTALL_PATH/man"
-    sh $USM set-current usm $VERSION
+    copy_usm "$USM_INSTALL_PATH"
 
-    chmod +x "$USM_INSTALL_PATH/bin/usm"
-    chmod +x "$USM_INSTALL_PATH/bin/usm-lib-helper"
+    echo "Setting $VERSION as the default version"
+    sh $USM set-current usm $VERSION
 
     sh $USM copy-script
     echo "**********"
@@ -42,12 +56,7 @@ else
     sh $USM init
     sh $USM add usm $VERSION
     USM_INSTALL_PATH="$(sh $USM path usm $VERSION)"
-    cp -R bin "$USM_INSTALL_PATH"
-    mkdir "$USM_INSTALL_PATH/man"
-    cp -R man1 "$USM_INSTALL_PATH/man"
-
-    chmod +x "$USM_INSTALL_PATH/bin/usm"
-    chmod +x "$USM_INSTALL_PATH/bin/usm-lib-helper"
+    copy_usm "$USM_INSTALL_PATH"
 
     echo "**********"
     echo 'The USM startup script is now located in $HOME/.usm-env - you should add '
