@@ -5,7 +5,7 @@
 # are not where the loader expects to find them.
 #
 
-function print-help() {
+printhelp() {
     echo "usm-lib-helper SOFTWARE VERSION [COMMAND]
 
 Runs a program, configuring the shared library search path to include the given
@@ -25,7 +25,7 @@ PROGRAM_VERSION="$2"
 COMMAND="$3"
 
 if [ "$PROGRAM_NAME" = "" -o "$PROGRAM_VERSION" = "" ]; then
-    print-help
+    printhelp
 fi
 
 if [ "$COMMAND" = "" ]; then
