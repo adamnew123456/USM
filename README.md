@@ -26,8 +26,11 @@ If not using the default, you'll need to pass it as an argument to the bootstrap
 
     cd USM
     sh boostrap.sh 
-    # You can also add the applications directory, if not ~/Apps
-    ## sh boostrap.sh usm-apps-directory
+
+    ## You can change the default installation directory to $X via:
+    sh bootsrap.sh -i $X
+    ## The bootstrap script also has some other options
+    sh bootstrap.sh -h
 
 At this point, you'll want to add the line `source ~/.usm-env` to load the USM startup script, which configures `$PATH` and other variables.
 You should also add the `source ~/.usm-env` line to the end of your shell's RC file, so these variables will be set every time your shell starts.
