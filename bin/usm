@@ -57,36 +57,7 @@ if [ -z "$USM_PATH" ]; then
     exit 1
 fi
 
-# Sigh. I wish that shell scripts had a Lisp-style quasiquote operator.
-# However, the only thing that actually needs to be injected is the
-# first $USM_PATH value, so every other usage of " and $ needs to be escaped.
-STARTUP_SCRIPT="#!/bin/sh
-# This is the USM initialization file - source it from your shell RC file
-# to load USM in your shell automatically, or source it from a script
-# which needs USM to run.
-
-USM_PATH=\"$USM_PATH\"
-export USM_PATH
-
-# Updates a : separated variable, if a specific entry is not already
-# present
-update_if_not_in_var() {
-    varname=\$1
-    value=\$2
-    varvalue=\"\$(eval echo \$\`eval echo \$varname\`)\"
-    echo \"\$varvalue\" | grep -s -q \"\$value\" || eval \"\$varname=\$varvalue:\$value\"
-}
-
-for f in \"\$USM_PATH\"/*; do
-    update_if_not_in_var PATH \"\$f/current/bin\"
-    update_if_not_in_var PKG_CONFIG_PATH \"\$f/current/lib/pkgconfig\"
-    update_if_not_in_var MANPATH \"\$f/current/man\"
-    update_if_not_in_var MANPATH \"\$f/current/share/man\"
-done
-export PATH
-export PKG_CONFIG_PATH
-export MANPATH
-"
+STARTUP_SCRIPT="`sed '1,/^BEGIN ENV SCRIPT/d' < "$0" | sed "s:%USM_PATH%:$USM_PATH:g"`"
 
 # Make sure that a particular software-version combo exists - if not, then
 # exit with an error
@@ -320,3 +291,37 @@ rm)
     echo "$USAGE"
     exit 1 ;;
 esac
+
+### The following embeds the literal content of the .usm-env script here,
+### which is accessible via a bit of POSIX sed magic.
+exit 0
+
+BEGIN ENV SCRIPT
+#!/bin/sh
+# This is the USM initialization file - source it from your shell RC file
+# to load USM in your shell automatically, or source it from a script
+# which needs USM to run.
+
+USM_PATH="%USM_PATH%"
+export USM_PATH
+
+# Updates a : separated variable, if a specific entry is not already
+# present
+update_if_not_in_var() {
+    varname=$1
+    value=$2
+    varvalue="`eval echo '$'"$varname"`"
+
+    varupdate="$varname=\"$varvalue:$value\""
+    echo "$varvalue" | grep -s -q "$value" || eval "$varupdate"
+}
+
+for f in "$USM_PATH"/*; do
+    update_if_not_in_var PATH "$f/current/bin"
+    update_if_not_in_var PKG_CONFIG_PATH "$f/current/lib/pkgconfig"
+    update_if_not_in_var MANPATH "$f/current/man"
+    update_if_not_in_var MANPATH "$f/current/share/man"
+done
+export PATH
+export PKG_CONFIG_PATH
+export MANPATH
