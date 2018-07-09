@@ -303,25 +303,92 @@ BEGIN ENV SCRIPT
 # which needs USM to run.
 
 USM_PATH="%USM_PATH%"
+PATH_SUFFIX="current/bin"
+PKGCONFIG_SUFFIX="current/lib/pkgconfig"
+MAN_SUFFIX="current/man current/share/man"
+
+EMPTY_PREFIX="MANPATH"
+
 export USM_PATH
 
-# Updates a : separated variable, if a specific entry is not already
-# present
-update_if_not_in_var() {
+# Adds a directory to a path-style variable, if that entry is not
+# already present and the directory exists.
+#
+#    update_path_var PATH /usr/local/bin
+update_path_var() {
     varname=$1
-    value=$2
+    value="$2"
     varvalue="`eval echo '$'"$varname"`"
 
-    varupdate="$varname=\"$varvalue:$value\""
-    echo "$varvalue" | grep -s -q "$value" || eval "$varupdate"
+    if [ -d "$value" ]; then
+        if [ "$varvalue" = "" ]; then
+            varupdate="$varname=\"$value\""
+        else
+            varupdate="$varname=\"$varvalue:$value\""
+        fi
+
+        echo "$varvalue" | grep -s -q "$value" || eval "$varupdate"
+    fi
 }
 
+# Adds a group of directory suffixes to a path-style variable
+#
+#     update_var_dirs PATH /usr "/bin /local/bin"
+#
+# Equivalent to:
+#
+#     update_path_var PATH /usr/bin
+#     update_path_var PAHT /usr/local/bin
+update_var_dirs() {
+    varname=$1
+    basedir="$2"
+    suffixes="$3"
+
+    for s in $suffixes; do
+        update_path_var $varname "$basedir/$s"
+    done
+}
+
+# Removes any entires within a path-style variable that are located somewhere
+# within the user's USM tree. This gives us the chance to remove stale entries
+# if the user sources this script after running `usm rm`
+#
+#    scrub_path_var PATH
+scrub_path_var() {
+    varname=$1
+    varvalue="`eval echo '$'"$varname"`"
+    IFS=":"
+
+    newvalue=
+    for dir in $varvalue; do
+        case "$dir" in
+            "$USM_PATH/"*)  ;;
+            *)
+                [ "$newvalue" != "" ] && newvalue="$newvalue:"
+                newvalue="$newvalue$dir" 
+                ;;
+        esac
+    done
+    eval "$varname=\"$newvalue\""
+
+    unset IFS
+}
+
+scrub_path_var PATH
+scrub_path_var PKG_CONFIG_PATH
+scrub_path_var MANPATH
+
 for f in "$USM_PATH"/*; do
-    update_if_not_in_var PATH "$f/current/bin"
-    update_if_not_in_var PKG_CONFIG_PATH "$f/current/lib/pkgconfig"
-    update_if_not_in_var MANPATH "$f/current/man"
-    update_if_not_in_var MANPATH "$f/current/share/man"
+    update_var_dirs PATH "$f" "$PATH_SUFFIX"
+    update_var_dirs PKG_CONFIG_PATH "$f" "$PKGCONFIG_SUFFIX"
+    update_var_dirs MANPATH "$f" "$MAN_SUFFIX"
 done
+
+for var in $EMPTY_PREFIX; do
+    varvalue="`eval echo '$'"$varname"`"
+    eval "$var=\":$varvalue\""
+done
+
 export PATH
 export PKG_CONFIG_PATH
 export MANPATH

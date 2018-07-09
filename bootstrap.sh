@@ -90,7 +90,7 @@ if [ -e "$USM_PATH/usm/$VERSION" ]; then
 
     update_install
 elif [ -e "$USM_PATH/usm" ]; then
-    # The user is updating in this case. Copy everthing over, including the
+    # The user is updating in this case. Copy everything over, including the
     # (possibly changed) startup script and then use the new version by default.
     echo "Updating to USM $VERSION"
     update_install
