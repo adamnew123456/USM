@@ -1,7 +1,7 @@
 #!/bin/sh
 # Takes the USM that is distributed in the Git repo and
 # copies it to the user's ~/Apps.
-VERSION=2.3-sh
+VERSION=2.4
 USM="bin/usm"
 
 FORCE_INSTALL=0
