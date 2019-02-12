@@ -13,11 +13,9 @@ It also provides a location to store you programs, which is sensibly organized, 
 
 ## Installation
 
-Before starting, you need to have a Bourne-compatible shell (`zsh`, `bash`, `dash`, etc.) since that is the dialect of shell script that the USM startup script uses. This branch, which used to be experimental, is now 
-stable and is a better official version of USM because it has fewer dependencies.
-
-First, you need to clone the USM source tree (alternatively, if you have
-already downloaded a tarball, you can skip this step):
+All you need to install USM is a Bourne-compatible POSIX shell, like `dash`,
+`bash`, `zsh`, etc.  First, you need to clone the USM source tree (alternatively, 
+if you have already downloaded a tarball, you can skip this step):
 
     git clone git://github.com/adamnew123456/USM
 
@@ -58,9 +56,3 @@ With that in mind, let's walk through installing a very simple program - [GNU He
 
 USM also comes with `usm-lib-helper`, which help you run programs in USM which need shared libraries.
 `man usm-lib-helper` should give you an idea on how to use this tool.
-
-## Contributing
-
-I am always willing to look over any issues or pull requests, so feel free to send them via GitHub (preferably, not by email).
-
-_adamnew123456_
