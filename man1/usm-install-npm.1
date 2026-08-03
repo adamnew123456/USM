@@ -1,0 +1,90 @@
+.TH usm 1 "3 August 2026" "Version 2.4.1" "USM NPM INSTALLER"
+.SH NAME
+.B usm-npm-install
+\- The USM NPM installer
+.SH SYNOPSIS
+.B usm-install-npm
+PACKAGE
+[VERSION]
+[APP-NAME]
+.SH DESCRIPTION
+This is a utility for installing and updating software distributed via npm.
+This creates an application directory within USM, installs the package into
+it, and creates symlinks for all binaries that the package provides.
+.IP
+.B
+usm-install-npm typescript latest
+.PP
+Internally, this command does three things:
+.IP
+1. Executes "usm add typescript npm" to create a prefix.
+.IP
+2. Executes "npm install typescript@latest" within that preifx.
+.IP
+3. Creates a bin/ directory within that prefix and adds symlinks to every file
+in the node_modules/.bin/ directory.
+.PP
+After usm-install-npm finishes, dot-source your .usm-env file to put all the package's commands on your $PATH:
+.IP
+.B
+$ tsc --version
+.br
+Version 5.2.2
+.SH OPTIONS
+.TP
+PACKAGE
+The name of the npm package. Required.
+.TP
+VERSION
+The version of the npm package. Optional, if not provided it is assumed to be
+.B latest
+.TP
+APP-NAME
+The name of the USM directory to install the package into. Optional, if not
+provided the app name is derived from PACKAGE by replacing dots and slashes
+with underscores.
+.IP
+This option is intended for two situations. If the package name conflicts with
+some other USM application, you need to provide a different app name.
+.IP
+You can also use this to install multiple npm packages into the same directory.
+Each USM application gets a separate node_modules/ directory, which is normally
+what you want to avoid dependency conflicts. However, if multiple packages
+share a large dependency, you can save space by installing them into the same
+USM app. Binaries from
+.I 
+all 
+packages are still symlinked into the bin/ directory.
+.SH EXAMPLES
+Install the latest version of typescript into $USM_PATH/typescript/npm.
+.IP
+.B
+usm-install-npm typescript
+.P
+Once installed, you can run the command with the same package name
+(and app name, if you gave it the first time) to upgrade the existing
+package to a new version.
+.P
+Install a specific version of typescript into $USM_PATH/tsc/npm.
+.IP
+.B
+usm-install-npm typescript 3.9.4 tsc
+.SH LIMITATIONS
+Packages managed by usm-install-npm do not work with USM's version handling.
+Each application managed by usm-install-npm has a single
+.B
+npm
+version, no matter the version of the underlying npm package. While you can
+install the same package into different USM apps, only one of them will appear
+on your $PATH. All other versions must be invoked using
+.B
+usm exec
+or their full paths.
+.SH ENVIRONMENT VARIABLES
+.TP
+USM_PATH
+Controls where this script finds the software managed by USM.
+.SH AUTHOR
+adamnew123456 <adamnew123456@gmail.com> and on GitHub
+.SH SEE ALSO
+This utility is a part of usm(1)

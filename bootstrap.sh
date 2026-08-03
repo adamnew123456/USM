@@ -1,7 +1,7 @@
 #!/bin/sh
 # Takes the USM that is distributed in the Git repo and
 # copies it to the user's ~/Apps.
-VERSION=2.4
+VERSION=2.4.1
 USM="bin/usm"
 
 FORCE_INSTALL=0
@@ -57,6 +57,7 @@ copy_usm() {
 
     chmod +x "$USM_INSTALL_PATH/bin/usm"
     chmod +x "$USM_INSTALL_PATH/bin/usm-lib-helper"
+    chmod +x "$USM_INSTALL_PATH/bin/usm-install-npm"
 }
 
 update_install() {

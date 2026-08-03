@@ -1,0 +1,61 @@
+#!/bin/sh
+package="$1"
+version="$2"
+app="$3"
+
+die() {
+    echo "$1"
+    exit 1
+}
+
+if [ -z "$1" ] ; then
+    die "Usage: $0 PACKAGE [VERSION] [APP-NAME]"
+fi
+if [ -z "$2" ] ; then
+    echo "Assuming npm version 'latest'"
+    version=latest
+fi
+
+if [ -z "$3" ]; then
+    app=$(printf '%s' "$package" | tr '/.' '_')
+    echo "No app name provided, using '$app'"
+fi
+
+app_dir="$(usm path "$app" current)"
+if [ -d "$app_dir" ]; then
+    if [ ! -f "$app_dir/package.json" ]; then
+        echo "$app does not appear to be an npm package (no package.json was"
+        echo "found in $app_dir)"
+        echo
+        echo "Either remove it, or install this package under a separate name"
+        echo
+        echo "\$ usm-install-npm '$package' '$version' my_app_name"
+        exit 1
+    fi
+
+    echo "Updating existing package in $app"
+else
+    echo "Installing package to $app"
+    usm add "$app" npm
+fi
+
+cd "$app_dir" || die "Cannot cd to $app_dir, aborting"
+
+target="${package}@${version}"
+echo "Executing npm: install ${package}@${version}"
+npm install "$target"
+
+if [ -d bin ]; then
+    echo "Removing old binary symlinks"
+    rm -r bin
+fi
+
+mkdir bin
+for binary in node_modules/.bin/* ; do
+    if [ ! -f "$binary" ]; then
+        break
+    fi
+
+    echo "Discovered binary: $binary"
+    ln -s "$(pwd)/$binary" "bin/$(basename "$binary")"
+done

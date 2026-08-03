@@ -54,5 +54,7 @@ With that in mind, let's walk through installing a very simple program - [GNU He
 
 ## Other Tools
 
-USM also comes with `usm-lib-helper`, which help you run programs in USM which need shared libraries.
-`man usm-lib-helper` should give you an idea on how to use this tool.
+USM also comes with additional utilities. Each has a man page that you can read for additional information:
+
+- `usm-lib-helper`: Runs programs with `$LD_LIBRARY_PATH` set to the app's `lib/` directory.
+- `usm-install-npm`: Install and upgrade `npm` packages as isolated USM applications.
