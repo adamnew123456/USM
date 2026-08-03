@@ -40,6 +40,23 @@ Prints out the absolute path to VERSION of SOFTWARE.
 usm rm SOFTWARE VERSION
 Removes VERSION of SOFTWARE. If VERSION is the only VERSION of software, then the
 directory where SOFTWARE is stored is removed.
+.TP
+usm exec SOFTWARE VERSION PATH [ARGS ...]
+Expands PATH to be relative to the bin/ directory in the VERSION of SOFTWARE, and execs that path will all remaining arguments. This is a short-hand form of:
+.IP
+.B
+$(usm path SOFTWARE VERSION)/bin/PATH ...
+.br
+.IP
+Instead of giving the full name of the executable, you can also give just a "-":
+.IP
+.B
+usm exec SOFTWARE VERSION - ...
+.IP
+This treats PATH as if it were the same as SOFTWARE:
+.IP
+.B
+$(usm path SOFTWARE VERSION)/bin/SOFTWARE ...
 .SH FILES AND DIRECTORIES
 .TP
 ~/.usm-env

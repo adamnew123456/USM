@@ -10,6 +10,7 @@ USAGE='Usage: usm COMMAND ...
     usm set-current SOFTWARE VERSION
     usm ls [SOFTWARE] [SOFTWARE] ...
     usm path SOFTWARE VERSION
+    usm exec SOFTWARE VERSION PATH ...
     usm rm SOFTWARE VERSION'
 
 HELP='Usage: usm COMMAND ...
@@ -47,6 +48,15 @@ Commands:
     path SOFTWARE VERSION
         Gets the absolute path to the directory storing VERSION of
         SOFTWARE.
+
+    exec SOFTWARE VERSION PATH [ARGS...]
+        Expands PATH to be relative to the bin/ directory in the VERSION of
+        SOFTWARE, and execs that path will all remaining arguments. This is a
+        short-hand form of "$(usm path SOFTWARE VERSION)/bin/PATH ...".
+
+        Instead of giving the full name of the executable, you can also give
+        just a "-": "usm exec SOFTWARE VERSION - ...". This treats PATH as if
+        it were the same as SOFTWARE.
 
     rm SOFTWARE VERSION
         Removes VERSION of SOFTWARE - if VERSION is the last remaining
@@ -190,6 +200,28 @@ usm_path() {
     echo "$USM_PATH/$_SOFTWARE/$_VERSION"
 }
 
+# Executes a program within a particular version of the software.
+usm_exec() {
+    assert_software_exists "$1" "$2"
+    _SOFTWARE="$1"
+    _VERSION="$2"
+    _BIN="$3"
+
+    if [ "$_BIN" = "-" ]; then
+        _BIN="$_SOFTWARE"
+    fi
+
+    shift 3
+
+    _TARGET="$USM_PATH/$_SOFTWARE/$_VERSION/bin/$_BIN"
+    if [ ! -x "$_TARGET" ]; then
+        echo "Cannot resolve $_BIN within $_VERSION of $_SOFTWARE."
+        echo "No such path: $_TARGET"
+        exit 1
+    fi
+    exec "$_TARGET" "$@"
+}
+
 # Removes a version of a particular software, removing the software itself
 # if this is the last version
 usm_rm() {
@@ -280,6 +312,13 @@ path)
     fi
 
     usm_path "$@" ;;
+exec)
+    if [ $# -lt 3 ]; then
+        echo "'usm exec SOFTWARE VERSION PATH ...' takes 3 or more arguments, got $#"
+        exit 1
+    fi
+
+    usm_exec "$@" ;;
 rm)
     if [ $# -ne 2 ]; then
         echo "'usm rm SOFTWARE VERSION' takes 2 arguments, got $#"
